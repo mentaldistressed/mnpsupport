@@ -47,6 +47,7 @@ def main():
     dispatcher.add_handler(CommandHandler("block", block))
     dispatcher.add_handler(CommandHandler("fileid", fileid))
     dispatcher.add_handler(CommandHandler("edit", edit))
+    dispatcher.add_handler(CommandHandler("check_tickets", check_tickets))
 
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
     dispatcher.add_handler(MessageHandler(Filters.video, handle_video))
