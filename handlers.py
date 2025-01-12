@@ -366,6 +366,59 @@ def edit(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         print(e)
 
+def quick_answer_ticket(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    if chat_id != agents_chat_id:
+        return
+
+    args = context.args
+    if len(args) < 2:
+        update.message.reply_text('Использование: /qans [ID обращения] [Номер быстрого ответа]')
+        return
+
+    try:
+        ticket_id = int(args[0])
+        quick_response_id = int(args[1])
+
+        if quick_response_id not in QUICK_RESPONSES:
+            update.message.reply_text('❌ Неверный номер быстрого ответа')
+            return
+
+        response = QUICK_RESPONSES[quick_response_id]
+        ticket = get_ticket_by_id(ticket_id)
+        user_id, status = ticket['user_id'], ticket['status']
+        agent_id = update.message.from_user.id
+        agent_number = agent_numbers.get(agent_id, 'без номера')
+
+        if status == '3':
+            update.message.reply_text(
+                '❌ Вы не можете ответить на данное обращение, поскольку оно <b>закрыто</b>',
+                parse_mode=ParseMode.HTML
+            )
+            return
+
+        # Отправка ответа пользователю
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        cursor.execute('SELECT user_id FROM tickets WHERE id = ?', (ticket_id,))
+        user_id = cursor.fetchone()[0]
+
+        user_message = context.bot.send_message(chat_id=user_id, text=f'👨‍💻 Агент поддержки #{agent_number}: {response}', parse_mode=ParseMode.HTML)
+        user_message_id = user_message.message_id
+
+        # Добавляем сообщение в историю тикета
+        message_id = add_message_to_ticket(ticket_id, 'agent', response, agent_id, user_message_id)
+
+        update.message.reply_text(f'✉️ Быстрый ответ №{quick_response_id} на обращение №{ticket_id} успешно отправлен (ID: {message_id})')
+
+    except ValueError:
+        update.message.reply_text('❌ Неверный формат ввода. Используйте: /qans [ID обращения] [Номер быстрого ответа]')
+    except sqlite3.Error as e:
+        update.message.reply_text(f'Ошибка работы с базой данных: {e}')
+    finally:
+        cursor.close()
+        conn.close()
+
 def answer_ticket(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if chat_id != agents_chat_id:
