@@ -81,7 +81,7 @@ def check_tickets(update: Update, context: CallbackContext) -> None:
             elif status == '3':
                 response += f'⚪️ №{ticket_id}. Статус: <b>🔴 {status_mapping[status]}</b>, Сообщение: {message}\n'
 
-        buttons = create_pagination_buttons(page, has_next_page, user_id)
+        buttons = create_pagination_buttons(page, has_next_page)
         if query:
             query.edit_message_text(response, parse_mode=ParseMode.HTML, reply_markup=buttons)
         else:
