@@ -54,7 +54,7 @@ def initialize_database():
 def get_tickets_by_user(user_id: int):
     conn = sqlite3.connect('support.db')
     cursor = conn.cursor()
-    
+
     try:
         query = """
             SELECT id, user_id, status, message, response, username
@@ -66,7 +66,6 @@ def get_tickets_by_user(user_id: int):
     except Exception as e:
         print(f"Ошибка при выполнении запроса: {e}")
         return []
-
 
 def edit_ticket_message(message_id, new_message):
     conn = sqlite3.connect('support.db')
