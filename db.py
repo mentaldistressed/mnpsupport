@@ -52,8 +52,9 @@ def initialize_database():
     conn.close()
 
 def get_tickets_by_user(user_id: int):
+    conn = sqlite3.connect('support.db')
+    cursor = conn.cursor()
     try:
-        # SQL-запрос для получения тикетов пользователя
         query = """
             SELECT id, status, message, response, username
             FROM tickets
