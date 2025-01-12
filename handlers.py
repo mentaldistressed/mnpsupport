@@ -42,45 +42,55 @@ def get_attachment_by_file_id(file_id):
     else:
         return None
 
-def check_tickets(update: Update, context: CallbackContext) -> None:
-    chat_id = update.effective_chat.id
-    if chat_id != agents_chat_id:
-        update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
-        return
-
-    args = context.args
-    if len(args) != 1:
-        update.message.reply_text("Использование: /checktickets [Циферный ID Telegram]")
-        return
-
-    try:
-        user_id = int(args[0])
-        tickets = get_tickets_by_user(user_id)
-
-        if not tickets:
-            update.message.reply_text(f"У пользователя с ID {user_id} нет обращений.")
+def checktickets(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    if query:
+        chat_id = query.message.chat_id
+        page, user_id = map(int, query.data.split('_')[1:])
+        query.answer()
+    else:
+        chat_id = update.effective_chat.id
+        if chat_id != agents_chat_id:
+            update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
             return
 
-        response = f"Обращения пользователя с ID {user_id}:\n\n"
-        for ticket in tickets:
-            ticket_id, status, message, response_text, username = ticket
-            response += (
-                f"ID: {ticket_id}\n"
-                f"Статус: {status}\n"
-                f"Сообщение: {message}\n"
-                f"Ответ: {response_text or 'Ещё не дан'}\n"
-                f"Имя пользователя: {username}\n\n"
-            )
+        args = context.args
+        if len(args) != 1:
+            update.message.reply_text("Использование: /checktickets [Циферный ID Telegram]")
+            return
+        
+        try:
+            user_id = int(args[0])
+            page = 0
+        except ValueError:
+            update.message.reply_text("ID пользователя должен быть числом.")
+            return
 
-        response_chunks = [response[i:i + 4096] for i in range(0, len(response), 4096)]
-        for chunk in response_chunks:
-            update.message.reply_text(chunk)
+    tickets = get_tickets_by_user(user_id)
+    if tickets:
+        tickets.reverse()
 
-    except ValueError:
-        update.message.reply_text("ID пользователя должно быть числом.")
-    except Exception as e:
-        print(e)
-        update.message.reply_text("Произошла ошибка при выполнении команды.")
+        paginated_tickets, has_next_page = paginate_tickets(tickets, page)
+        response = f"📋 Обращения пользователя с ID <code>{user_id}</code>:\n\n"
+        for ticket in paginated_tickets:
+            ticket_id, _, status, message, response_text, username = ticket
+            if status == '1':
+                response += f'⚪️ №{ticket_id}. Статус: <b>🟢 {status_mapping[status]}</b>, Сообщение: {message}\n'
+            elif status == '2':
+                response += f'⚪️ №{ticket_id}. Статус: <b>🟡 {status_mapping[status]}</b>, Сообщение: {message}\n'
+            elif status == '3':
+                response += f'⚪️ №{ticket_id}. Статус: <b>🔴 {status_mapping[status]}</b>, Сообщение: {message}\n'
+
+        buttons = create_pagination_buttons(page, has_next_page, user_id)
+        if query:
+            query.edit_message_text(response, parse_mode=ParseMode.HTML, reply_markup=buttons)
+        else:
+            update.message.reply_text(response, parse_mode=ParseMode.HTML, reply_markup=buttons)
+    else:
+        if query:
+            query.edit_message_text(f'❌ У пользователя с ID {user_id} нет обращений', parse_mode=ParseMode.HTML)
+        else:
+            update.message.reply_text(f'❌ У пользователя с ID {user_id} нет обращений')
 
 def fileid(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
