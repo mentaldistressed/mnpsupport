@@ -42,7 +42,7 @@ def get_attachment_by_file_id(file_id):
     else:
         return None
 
-def checktickets(update: Update, context: CallbackContext) -> None:
+def check_tickets(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if chat_id != agents_chat_id:
         update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
