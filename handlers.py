@@ -374,7 +374,7 @@ def qinfo(update: Update, context: CallbackContext) -> None:
 
     response = "📝 Доступные быстрые ответы:\n\n"
     for quick_response_id, quick_response in QUICK_RESPONSES.items():
-        response += f"{quick_response_id}. {quick_response}\n\n"
+        response += f"<b>{quick_response_id}.</b> {quick_response}\n\n"
     
     update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
