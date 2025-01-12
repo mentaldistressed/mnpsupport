@@ -366,6 +366,18 @@ def edit(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         print(e)
 
+def qinfo(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    if chat_id != agents_chat_id:
+        update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
+        return
+
+    response = "📝 Доступные быстрые ответы:\n\n"
+    for quick_response_id, quick_response in QUICK_RESPONSES.items():
+        response += f"{quick_response_id}. {quick_response}\n"
+    
+    update.message.reply_text(response)
+
 def quick_answer_ticket(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if chat_id != agents_chat_id:
