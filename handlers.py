@@ -4,7 +4,7 @@ from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
 from db import create_ticket, get_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_block_reason, get_username_by_id, get_statistics, edit_ticket_message, get_tickets_by_user
-from utils import status_mapping
+from utils import status_mapping, QUICK_RESPONSES
 from ping3 import ping, verbose_ping
 from typing import List, Tuple
 import os
@@ -397,16 +397,15 @@ def quick_answer_ticket(update: Update, context: CallbackContext) -> None:
             )
             return
 
-        # Отправка ответа пользователю
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
+
         cursor.execute('SELECT user_id FROM tickets WHERE id = ?', (ticket_id,))
         user_id = cursor.fetchone()[0]
 
         user_message = context.bot.send_message(chat_id=user_id, text=f'👨‍💻 Агент поддержки #{agent_number}: {response}', parse_mode=ParseMode.HTML)
         user_message_id = user_message.message_id
 
-        # Добавляем сообщение в историю тикета
         message_id = add_message_to_ticket(ticket_id, 'agent', response, agent_id, user_message_id)
 
         update.message.reply_text(f'✉️ Быстрый ответ №{quick_response_id} на обращение №{ticket_id} успешно отправлен (ID: {message_id})')
@@ -416,8 +415,11 @@ def quick_answer_ticket(update: Update, context: CallbackContext) -> None:
     except sqlite3.Error as e:
         update.message.reply_text(f'Ошибка работы с базой данных: {e}')
     finally:
-        cursor.close()
-        conn.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
 
 def answer_ticket(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
