@@ -111,15 +111,15 @@ def start(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('🛠 Произошёл внутренний сбой, пожалуйста, совершите попытку позже')
         print(e)
 
-# def hhelp(update: Update, context: CallbackContext) -> None:
-#     chat_id = update.effective_chat.id
+def hhelp(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
 
-#     if chat_id != agents_chat_id:
-#         update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
-#         return
+    if chat_id != agents_chat_id:
+        update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
+        return
     
-#     response = f'Функционал агента поддержки:\n\n/view — просмотр всех обращений\n/hhelp — команды, доступные для агента поддержки\n/ansid [Telegram ID] [сообщение] — сообщение пользователю по TG ID\n/ans [ID обращения] [сообщение] — ответ на обращение\n/history [ID обращения] — просмотр сообщений во всём обращении\n/status [ID обращения] [новый статус (1 - open, 2 - pending, 3 - closed)] —  смена статуса обращения\n/block [Telegram ID] [Причина блокировки] — ограничить пользователя в создании новых обращений'
-#     update.message.reply_text(response)
+    response = f'Функционал агента поддержки:\n\n/view — просмотр всех обращений\n/hhelp — команды, доступные для агента поддержки\n/ansid [Telegram ID] [сообщение] — сообщение пользователю по TG ID\n/ans [ID обращения] [сообщение] — ответ на обращение\n/history [ID обращения] — просмотр сообщений во всём обращении\n/status [ID обращения] [новый статус (1 - open, 2 - pending, 3 - closed)] —  смена статуса обращения\n/block [Telegram ID] [Причина блокировки] — ограничить пользователя в создании новых обращений'
+    update.message.reply_text(response)
 
 def ping(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('🕒️️️️️️ Пинг-понг до ближайшего сервера: ' + str(random.randrange(13, 15)) + ' ms')
@@ -205,7 +205,6 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
             photo_file = update.message.photo[-1].get_file()
             file_id = photo_file.file_id
             short_id = generate_short_id(file_id)
-            # Сохранение file_id в базу данных
             save_photo(short_id, file_id)
             update.message.reply_text(f'Фото загружено. ID фото: {short_id}')
             context.user_data['awaiting_photo'] = False
@@ -445,7 +444,6 @@ def paginate_tickets(tickets, page, items_per_page=15):
     end = start + items_per_page
     return tickets[start:end], len(tickets) > end
 
-# Функция для создания инлайн-кнопок для навигации по страницам
 def create_pagination_buttons(page, has_next_page):
     buttons = []
     if page > 0:
@@ -470,7 +468,6 @@ def view_tickets(update: Update, context: CallbackContext) -> None:
 
     tickets = get_all_tickets()
     if tickets:
-        # Разворачиваем порядок тикетов (от последнего к первому)
         tickets.reverse()
         
         paginated_tickets, has_next_page = paginate_tickets(tickets, page)
@@ -515,35 +512,31 @@ def ansid(update, context):
         update.message.reply_text("Неверный формат user_id.")   
 
 def convert_to_gmt3(utc_time_str):
-    utc_time = datetime.strptime(utc_time_str, '%Y-%m-%d %H:%M:%S')  # Adjust format as needed
+    utc_time = datetime.strptime(utc_time_str, '%Y-%m-%d %H:%M:%S')
     utc_time = utc_time.replace(tzinfo=pytz.utc)
     gmt3_time = utc_time.astimezone(pytz.timezone('Europe/Moscow'))
-    return gmt3_time.strftime('%Y-%m-%d %H:%M:%S')  # Adjust format as needed
+    return gmt3_time.strftime('%Y-%m-%d %H:%M:%S')
 
 def convert_to_timezone(timestamp_str, timezone):
-    # Преобразуем строку времени в объект datetime
     try:
         timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
     except ValueError:
-        # Если формат времени отличается, нужно адаптировать формат строки
         raise ValueError(f"Неверный формат времени: {timestamp_str}")
 
-    # Устанавливаем, что исходное время — UTC, если оно в базе данных хранится в UTC
     timestamp = timestamp.replace(tzinfo=pytz.utc)
 
-    # Преобразуем время в нужный часовой пояс (например, Europe/Moscow)
     local_time = timestamp.astimezone(pytz.timezone(timezone))
     return local_time.strftime('%Y-%m-%d %H:%M:%S')
 
 def get_agent_number(agent_id):
     if agent_id == 7897895019:
-        return 2  # Возвращаем номер 2 для агента с ID 7897895019
+        return 2
     elif agent_id == 5427059231:
-        return 1  # Возвращаем номер 1 для агента с ID 5427059231
+        return 1
     elif agent_id == 785092711:
-        return 3  # Возвращаем номер 1 для агента с ID 5427059231
+        return 3
     else:
-        return "?"  # Для всех остальных ID возвращаем "без номера"
+        return "?"
     
 def history(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
@@ -564,13 +557,12 @@ def history(update: Update, context: CallbackContext) -> None:
         response = ''
         attachment_count = 1
         for message in messages:
-            timestamp_gmt3 = convert_to_gmt3(message[4])  # Преобразование времени в GMT+3
+            timestamp_gmt3 = convert_to_gmt3(message[4])
             
-            # Определяем отправителя и его номер
             sender = 'Пользователь' if message[2] == 'user' else '👨‍💻 Агент поддержки'
             if message[2] == 'agent':
-                agent_id = message[5]  # Предполагается, что message[1] — это ID агента из ticket_history
-                agent_number = get_agent_number(message[5])  # Получаем номер агента
+                agent_id = message[5]
+                agent_number = get_agent_number(message[5])
 
                 sender = f'👨‍💻 Агент поддержки #{agent_number}'
 
@@ -584,12 +576,10 @@ def history(update: Update, context: CallbackContext) -> None:
             if len(chunk) + len(line) + 1 <= max_message_length:
                 chunk += line + '\n'
             else:
-                # Отправляем текущий блок и начинаем новый
                 update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
                 time.sleep(1)
                 chunk = line + '\n'
         
-        # Отправляем оставшийся блок, если есть
         if chunk:
             update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
             time.sleep(1)
