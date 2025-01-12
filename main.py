@@ -39,7 +39,7 @@ def main():
     dispatcher.add_handler(CommandHandler("status", change_ticket_status))
     dispatcher.add_handler(CommandHandler("view", view_tickets))
     dispatcher.add_handler(CommandHandler("history", history))
-    # dispatcher.add_handler(CommandHandler("hhelp", hhelp))
+    dispatcher.add_handler(CommandHandler("hhelp", hhelp))
     dispatcher.add_handler(CommandHandler("ansid", ansid))
     dispatcher.add_handler(CommandHandler("stats", stats))
     dispatcher.add_handler(CommandHandler("ping", ping))
