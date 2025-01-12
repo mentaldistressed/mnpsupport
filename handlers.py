@@ -95,16 +95,8 @@ def start(update: Update, context: CallbackContext) -> None:
         return
     try:
         if access_enabled or update.message.from_user.id in allowed_ids:
-            chat_member = context.bot.get_chat_member(CHANNEL_ID, update.message.from_user.id)
-            if chat_member.status in ("member", "administrator", "creator"):
                 message = '👋 Привет! Нужна помощь или у Вас возникли вопросы? Опишите, пожалуйста, суть обращения максимально подробно. Наши агенты технической поддержки с удовольствием Вам помогут!\n\n🔐 Не удается войти в игровой аккаунт? Воспользуйтесь ссылкой для восстановления доступа: https://mn-p.com (нажмите кнопку «Не можете войти?» в правом верхнем углу страницы)'
                 context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-            else:
-                keyboard = [
-                    [InlineKeyboardButton("👉 Подписаться на канал", url=f"https://t.me/gta_mn")],
-                    [InlineKeyboardButton("🚀 Запустить бота", callback_data='start')],]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                update.message.reply_text('⚠️ Для начала взаимодействия с помощником Вам необходимо подписаться на наш новостной канал', reply_markup=reply_markup)
         else:
             update.message.reply_text('🚫 Доступ к использованию бота для Вас ограничен. Пожалуйста, обратитесь к администратору для получения доступа')
     except TelegramError as e:
@@ -163,30 +155,23 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     try:
         if access_enabled or update.message.from_user.id in allowed_ids:
             chat_member = context.bot.get_chat_member(CHANNEL_ID, update.message.from_user.id)
-            if chat_member.status in ("member", "administrator", "creator"):
-                if update.message.video:
-                    update.message.reply_text("❌ К сожалению, отправка видео недоступна. Пожалуйста, загрузите его на YouTube и предоставьте ссылку для просмотра")
-                    return
-                conn = sqlite3.connect(DATABASE_FILE)
-                cursor = conn.cursor()
-                ticket = get_open_ticket(user_id)
-                if ticket:
-                    ticket_id = ticket[0]
-                    ticketusername = update.message.from_user.username
-                    add_message_to_ticket(ticket_id, 'user', message_text, None, None)
-                    notification_text = (f'🔔 Добавлено сообщение к обращению №{ticket_id} от пользователя @{update.message.from_user.username} '
-                                        f'(Telegram ID: {update.message.from_user.id}): {message_text}')
-                else:
-                    ticket_id = create_ticket(user_id, '1', message_text, update.message.from_user.username)
-                    notification_text = (f'🔔 Создано обращение №{ticket_id} от пользователя @{update.message.from_user.username} '
-                                        f'(Telegram ID: {update.message.from_user.id}): {message_text}')
-                    update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
+            if update.message.video:
+                update.message.reply_text("❌ К сожалению, отправка видео недоступна. Пожалуйста, загрузите его на YouTube и предоставьте ссылку для просмотра")
+                return
+            conn = sqlite3.connect(DATABASE_FILE)
+            cursor = conn.cursor()
+            ticket = get_open_ticket(user_id)
+            if ticket:
+                ticket_id = ticket[0]
+                ticketusername = update.message.from_user.username
+                add_message_to_ticket(ticket_id, 'user', message_text, None, None)
+                notification_text = (f'🔔 Добавлено сообщение к обращению №{ticket_id} от пользователя @{update.message.from_user.username} '
+                                    f'(Telegram ID: {update.message.from_user.id}): {message_text}')
             else:
-                keyboard = [
-                    [InlineKeyboardButton("👉 Подписаться на канал", url=f"https://t.me/gta_mn")],
-                    [InlineKeyboardButton("🚀 Запустить бота", callback_data='start')],]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                update.message.reply_text('⚠️ Для начала взаимодействия с помощником Вам необходимо подписаться на наш новостной канал', reply_markup=reply_markup)
+                ticket_id = create_ticket(user_id, '1', message_text, update.message.from_user.username)
+                notification_text = (f'🔔 Создано обращение №{ticket_id} от пользователя @{update.message.from_user.username} '
+                                    f'(Telegram ID: {update.message.from_user.id}): {message_text}')
+                update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
 
         context.bot.send_message(chat_id=agents_chat_id, text=notification_text)
 
@@ -623,16 +608,7 @@ def button_callback(update: Update, context: CallbackContext) -> None:
         try:
             if access_enabled or chat_id in allowed_ids:
                 chat_member = context.bot.get_chat_member(CHANNEL_ID, chat_id)
-                if chat_member.status in ("member", "administrator", "creator"):
-                    response = '👋 Привет! Нужна помощь или у Вас возникли вопросы? Опишите, пожалуйста, суть обращения максимально подробно. Наши агенты технической поддержки с удовольствием Вам помогут!\n\n🔐 Не удается войти в игровой аккаунт? Воспользуйтесь ссылкой для восстановления доступа: https://mn-p.com (нажмите кнопку «Не можете войти?» в правом верхнем углу страницы)'
-                else:
-                    keyboard = [
-                        [InlineKeyboardButton("👉 Подписаться на канал", url=f"https://t.me/gta_mn")],
-                        [InlineKeyboardButton("🚀 Запустить бота", callback_data='start')],]
-                    reply_markup = InlineKeyboardMarkup(keyboard)
-                    response = '🤨 Похоже, Вы всё ещё не подписались на наш новостной канал. Пожалуйста, сделайте это, чтобы продолжить взаимодействие с технической поддержкой'
-                    query.edit_message_text(response, reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-                    return
+                response = '👋 Привет! Нужна помощь или у Вас возникли вопросы? Опишите, пожалуйста, суть обращения максимально подробно. Наши агенты технической поддержки с удовольствием Вам помогут!\n\n🔐 Не удается войти в игровой аккаунт? Воспользуйтесь ссылкой для восстановления доступа: https://mn-p.com (нажмите кнопку «Не можете войти?» в правом верхнем углу страницы)'
             else:
                 response = '🚫 Доступ к использованию бота для Вас ограничен. Пожалуйста, обратитесь к администратору для получения доступа'
         except TelegramError as e:
