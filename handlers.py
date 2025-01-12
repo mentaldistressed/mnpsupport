@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
-from db import create_ticket, get_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_block_reason, get_username_by_id, get_statistics, edit_ticket_message
+from db import create_ticket, get_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_block_reason, get_username_by_id, get_statistics, edit_ticket_message, get_tickets_by_user
 from utils import status_mapping
 from ping3 import ping, verbose_ping
 from typing import List, Tuple
@@ -41,6 +41,56 @@ def get_attachment_by_file_id(file_id):
         return attachment[0]
     else:
         return None
+
+def check_tickets(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    if query:
+        chat_id = query.message.chat_id
+        page, user_id = map(int, query.data.split('_')[1:])
+        query.answer()
+    else:
+        chat_id = update.effective_chat.id
+        if chat_id != agents_chat_id:
+            update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
+            return
+
+        args = context.args
+        if len(args) != 1:
+            update.message.reply_text("Использование: /checktickets [Циферный ID Telegram]")
+            return
+        
+        try:
+            user_id = int(args[0])
+            page = 0
+        except ValueError:
+            update.message.reply_text("ID пользователя должен быть числом.")
+            return
+
+    tickets = get_tickets_by_user(user_id)
+    if tickets:
+        tickets.reverse()
+
+        paginated_tickets, has_next_page = paginate_tickets(tickets, page)
+        response = f"📋 Обращения пользователя с ID <code>{user_id}</code>:\n\n"
+        for ticket in paginated_tickets:
+            ticket_id, _, status, message, response_text, username = ticket
+            if status == '1':
+                response += f'⚪️ №{ticket_id}. Статус: <b>🟢 {status_mapping[status]}</b>, Сообщение: {message}\n'
+            elif status == '2':
+                response += f'⚪️ №{ticket_id}. Статус: <b>🟡 {status_mapping[status]}</b>, Сообщение: {message}\n'
+            elif status == '3':
+                response += f'⚪️ №{ticket_id}. Статус: <b>🔴 {status_mapping[status]}</b>, Сообщение: {message}\n'
+
+        buttons = create_pagination_buttons(page, has_next_page)
+        if query:
+            query.edit_message_text(response, parse_mode=ParseMode.HTML, reply_markup=buttons)
+        else:
+            update.message.reply_text(response, parse_mode=ParseMode.HTML, reply_markup=buttons)
+    else:
+        if query:
+            query.edit_message_text(f'❌ У пользователя с ID {user_id} нет обращений', parse_mode=ParseMode.HTML)
+        else:
+            update.message.reply_text(f'❌ У пользователя с ID {user_id} нет обращений')
 
 def fileid(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
