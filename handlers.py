@@ -374,9 +374,9 @@ def qinfo(update: Update, context: CallbackContext) -> None:
 
     response = "📝 Доступные быстрые ответы:\n\n"
     for quick_response_id, quick_response in QUICK_RESPONSES.items():
-        response += f"{quick_response_id}. {quick_response}\n"
+        response += f"{quick_response_id}. {quick_response}\n\n"
     
-    update.message.reply_text(response)
+    update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
 def quick_answer_ticket(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
