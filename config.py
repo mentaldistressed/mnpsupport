@@ -2,5 +2,5 @@ TOKEN = '7865466117:AAEwulwyWF5-7R6wqyZBtSXo7275Ah7O6e4'
 CHANNEL_ID = -1001777441063
 DATABASE_FILE = 'support.db'
 allowed_ids = [7897895019, 5427059231]
-agents_chat_id = -1002302681300
+agents_chat_id = 2302681300
 backup_chat_id = 7897895019
