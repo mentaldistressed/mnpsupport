@@ -42,7 +42,7 @@ def get_attachment_by_file_id(file_id):
     else:
         return None
 
-def checktickets(update: Update, context: CallbackContext) -> None:
+def check_tickets(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     if query:
         chat_id = query.message.chat_id
