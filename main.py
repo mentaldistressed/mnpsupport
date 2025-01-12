@@ -1,6 +1,6 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext
 from config import TOKEN, agents_chat_id, DATABASE_FILE, backup_chat_id
-from handlers import fileid, start, handle_message, answer_ticket, change_ticket_status, view_tickets, button_callback, history, handle_photo, ansid, ping, handle_video, reboot, block, stats, edit, hhelp, check_tickets
+from handlers import fileid, start, handle_message, answer_ticket, change_ticket_status, view_tickets, button_callback, history, handle_photo, ansid, handle_video, reboot, block, stats, edit, hhelp, check_tickets
 import os
 import threading
 import time
@@ -42,7 +42,6 @@ def main():
     dispatcher.add_handler(CommandHandler("hhelp", hhelp))
     dispatcher.add_handler(CommandHandler("ansid", ansid))
     dispatcher.add_handler(CommandHandler("stats", stats))
-    dispatcher.add_handler(CommandHandler("ping", ping))
     dispatcher.add_handler(CommandHandler("reboot", reboot))
     dispatcher.add_handler(CommandHandler("block", block))
     dispatcher.add_handler(CommandHandler("fileid", fileid))
