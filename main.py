@@ -56,7 +56,7 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.photo, handle_photo))
     dispatcher.add_handler(CallbackQueryHandler(button_callback))
 
-    updater.job_queue.run_once(notify_agents, when=0)
+    # updater.job_queue.run_once(notify_agents, when=0)
 
     backup_thread = threading.Thread(target=backup_scheduler, args=(updater,))
     backup_thread.daemon = True
@@ -66,7 +66,7 @@ def main():
         updater.start_polling()
         updater.idle()
     finally:
-        stop_polling_notification(updater)
+        # stop_polling_notification(updater)
         python = sys.executable
         os.execlp('python3', 'python3', *os.path.abspath(__file__))
     
