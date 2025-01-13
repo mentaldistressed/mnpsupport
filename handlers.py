@@ -101,7 +101,7 @@ def check_block(update: Update, context: CallbackContext) -> None:
 
     args = context.args
     if len(args) < 1:
-        update.message.reply_text("Использование: /checkban [ID пользователя]")
+        update.message.reply_text("Использование: /check_block [ID пользователя]")
         return
 
     try:
