@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
-from db import create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id
+from db import create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason
 from utils import status_mapping, QUICK_RESPONSES
 from ping3 import ping, verbose_ping
 from typing import List, Tuple
@@ -91,6 +91,38 @@ def check_tickets(update: Update, context: CallbackContext) -> None:
             query.edit_message_text(f'❌ У пользователя с ID {user_id} нет обращений', parse_mode=ParseMode.HTML)
         else:
             update.message.reply_text(f'❌ У пользователя с ID {user_id} нет обращений')
+
+def check_block(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+
+    if chat_id != agents_chat_id:
+        update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
+        return
+
+    args = context.args
+    if len(args) < 1:
+        update.message.reply_text("Использование: /checkban [ID пользователя]")
+        return
+
+    try:
+        user_id = int(args[0])
+        block_reason = get_block_reason(user_id)
+
+        if block_reason:
+            update.message.reply_text(
+                f"🔒 Пользователь с ID <code>{user_id}</code> заблокирован.\nПричина: <b>{block_reason}</b>",
+                parse_mode=ParseMode.HTML
+            )
+        else:
+            update.message.reply_text(
+                f"✅ Пользователь с ID <code>{user_id}</code> не заблокирован.",
+                parse_mode=ParseMode.HTML
+            )
+
+    except ValueError:
+        update.message.reply_text("❌ Указан некорректный ID пользователя. Используйте числовой ID.")
+    except Exception as e:
+        update.message.reply_text(f"❌ Произошла ошибка: {e}")
 
 def fileid(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
