@@ -51,6 +51,27 @@ def initialize_database():
     cursor.close()
     conn.close()
 
+def get_ticket_by_id(ticket_id):
+    conn = sqlite3.connect('support.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, user_id, status, message, username FROM tickets WHERE id = ?", (ticket_id,))
+    
+    ticket = cursor.fetchone()
+
+    conn.close()
+
+    if ticket:
+        return {
+            'ticket_id': ticket[0],
+            'user_id': ticket[1],
+            'status': ticket[2],
+            'message': ticket[3],
+            'username': ticket[4]
+        }
+    else:
+        return None
+
 def get_tickets_by_user(user_id: int):
     conn = sqlite3.connect('support.db')
     cursor = conn.cursor()
