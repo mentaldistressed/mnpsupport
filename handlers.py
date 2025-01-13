@@ -5,7 +5,6 @@ import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
 from db import create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason
 from utils import status_mapping, QUICK_RESPONSES
-from ping3 import ping, verbose_ping
 from typing import List, Tuple
 import os
 import time
