@@ -370,12 +370,12 @@ def delete_message(update: Update, context: CallbackContext) -> None:
                     update.message.reply_text(f"Ошибка удаления: {e}")
                     return
             
-            update.message.reply_text(f"✅ Сообщение с ID {message_id} удалено.")
+            update.message.reply_text(f"✅ Сообщение с ID {message_id} удалено")
         else:
-            update.message.reply_text(f"❌ Сообщение с ID {message_id} не найдено.")
+            update.message.reply_text(f"❌ Сообщение с ID {message_id} не найдено")
 
     except ValueError:
-        update.message.reply_text("❌ Ошибка: ID сообщения должен быть числом.")
+        update.message.reply_text("❌ Ошибка: ID сообщения должен быть числом")
     except Exception as e:
         update.message.reply_text(f"❌ Ошибка: {e}")
 
