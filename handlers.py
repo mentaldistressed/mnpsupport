@@ -25,6 +25,7 @@ def flood(context: CallbackContext):
         message = "Ошибка работы с базой данных: table ticket_history has no column named user_message_id"
         context.bot.send_message(chat_id=-1002322432827, text=message)
         delay = random.randint(3, 7)
+        print(delay)
         time.sleep(delay)
 
 def start_flood(update: Update, context: CallbackContext):
