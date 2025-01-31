@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
-from db import create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason
+from db import create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason, get_message_info
 from utils import status_mapping, QUICK_RESPONSES
 from typing import List, Tuple
 import os
@@ -12,52 +12,10 @@ import sys
 import pytz
 import hashlib
 import re
-import threading
 import random
 from datetime import datetime
 
 access_enabled = True
-flood_active = False
-
-def flood(context: CallbackContext):
-    global flood_active
-    while flood_active:
-        message = "Ошибка работы с базой данных: table ticket_history has no column named user_message_id"
-        context.bot.send_message(chat_id=-1002322432827, text=message)
-        delay = random.randint(3, 7)
-        print(delay)
-        time.sleep(delay)
-
-def start_flood(update: Update, context: CallbackContext):
-    global flood_active
-    user_id = update.message.from_user.id
-
-    if user_id != 7897895019:
-        return
-
-    if flood_active:
-        update.message.reply_text("Флуд уже запущен.")
-        return
-
-    flood_active = True
-    threading.Thread(target=flood, args=(context,)).start()
-    update.message.reply_text("Флуд запущен.")
-
-def stop_flood(update: Update, context: CallbackContext):
-    global flood_active
-    user_id = update.message.from_user.id
-
-    # Проверка ID пользователя
-    if user_id != 7897895019:
-        update.message.reply_text("У вас нет прав на выполнение этой команды.")
-        return
-
-    # Остановка флуда
-    if flood_active:
-        flood_active = False
-        update.message.reply_text("Флуд остановлен.")
-    else:
-        update.message.reply_text("Флуд не был запущен.")
 
 def escape_markdown(text):
     return re.sub(r'([_*[\]()~`>#+\-=|{}.!])', r'\\\1', text)
@@ -388,6 +346,40 @@ def reboot(update: Update, context: CallbackContext) -> None:
 
 #     update.message.reply_text('Ответ отправлен пользователю.')
 
+def delete_message(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    if chat_id != agents_chat_id:
+        return
+
+    args = context.args
+    if len(args) < 1:
+        update.message.reply_text("Использование: /delete [ID сообщения]")
+        return
+
+    try:
+        message_id = int(args[0])
+
+        success, user_message_id, ticket_id = get_message_info(message_id)
+
+        if success:
+            user_chat_id = get_user_id_by_ticket(ticket_id)
+            if user_message_id:
+                try:
+                    context.bot.delete_message(chat_id=user_chat_id, message_id=user_message_id)
+                except Exception as e:
+                    update.message.reply_text(f"Ошибка удаления: {e}")
+                    return
+            
+            update.message.reply_text(f"✅ Сообщение с ID {message_id} удалено.")
+        else:
+            update.message.reply_text(f"❌ Сообщение с ID {message_id} не найдено.")
+
+    except ValueError:
+        update.message.reply_text("❌ Ошибка: ID сообщения должен быть числом.")
+    except Exception as e:
+        update.message.reply_text(f"❌ Ошибка: {e}")
+
+
 def edit(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if chat_id != agents_chat_id:
@@ -414,7 +406,7 @@ def edit(update: Update, context: CallbackContext) -> None:
                         chat_id=user_chat_id,
                         message_id=user_message_id,
                         text=final_message,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
                 except Exception as e:
                     print(e)

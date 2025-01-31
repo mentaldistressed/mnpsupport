@@ -88,6 +88,15 @@ def get_tickets_by_user(user_id: int):
         print(f"Ошибка при выполнении запроса: {e}")
         return []
 
+def get_message_info(message_id):
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_message_id, ticket_id FROM ticket_history WHERE id = ?", (message_id,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return (True, result[0], result[1]) if result else (False, None, None)
+
 def edit_ticket_message(message_id, new_message):
     conn = sqlite3.connect('support.db')
     cursor = conn.cursor()
