@@ -410,11 +410,14 @@ def edit(update: Update, context: CallbackContext) -> None:
                     )
                 except Exception as e:
                     print(e)
-            update.message.reply_text(f"Сообщение с ID {message_id} отредактировано")
+            update.message.reply_text(f"✅ Сообщение с ID {message_id} отредактировано")
         else:
-            update.message.reply_text(f"Сообщение с ID {message_id} не найдено")
+            update.message.reply_text(f"❌ Сообщение с ID {message_id} не найдено")
+        
+    except ValueError:
+        update.message.reply_text("❌ Ошибка: ID сообщения должен быть числом")
     except Exception as e:
-        print(e)
+        update.message.reply_text(f"❌ Ошибка: {e}")
 
 def qinfo(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
