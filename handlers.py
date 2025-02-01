@@ -379,7 +379,6 @@ def delete_message(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         update.message.reply_text(f"❌ Ошибка: {e}")
 
-
 def edit(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if chat_id != agents_chat_id:
