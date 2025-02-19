@@ -705,6 +705,7 @@ def history(update: Update, context: CallbackContext) -> None:
         response = ''
         attachment_count = 1
         for message in messages:
+            message_id, ticket_id, sender, message_text, timestamp, agent_id, user_message_id = message
             timestamp_gmt3 = convert_to_gmt3(message[4])
             user_message_id = message[1]
             sender = 'Пользователь' if message[2] == 'user' else '👨‍💻 Агент поддержки'
@@ -712,7 +713,7 @@ def history(update: Update, context: CallbackContext) -> None:
                 agent_id = message[5]
                 agent_number = get_agent_number(message[5])
                 if user_message_id:
-                    message += f' (ID: {user_message_id})'
+                    message += f" (ID: {user_message_id})"
 
                 sender = f'👨‍💻 Агент поддержки #{agent_number}'
 
