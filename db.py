@@ -91,7 +91,7 @@ def get_tickets_by_user(user_id: int):
 def delete_message_from_history(message_id):
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM ticket_history WHERE user_message_id = ?", (message_id,))
+    cursor.execute("DELETE FROM ticket_history WHERE id = ?", (message_id,))
     conn.commit()
     cursor.close()
     conn.close()
