@@ -255,7 +255,6 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                     notification_text = (f'🔔 Добавлено сообщение к обращению №{ticket_id} от пользователя @{update.message.from_user.username} '
                                         f'(Telegram ID: {update.message.from_user.id}): {message_text}')
                     update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
-                    # ashaha
                 else:
                     ticket_id = create_ticket(user_id, '1', message_text, update.message.from_user.username)
                     notification_text = (f'🔔 Создано обращение №{ticket_id} от пользователя @{update.message.from_user.username} '
@@ -372,6 +371,8 @@ def delete_message(update: Update, context: CallbackContext) -> None:
                     update.message.reply_text(f"Ошибка удаления: {e}")
                     return
             
+            delete_message_from_history(message_id)
+
             update.message.reply_text(f"✅ Сообщение с ID {message_id} удалено")
         else:
             update.message.reply_text(f"❌ Сообщение с ID {message_id} не найдено")
