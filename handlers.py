@@ -706,7 +706,7 @@ def history(update: Update, context: CallbackContext) -> None:
         attachment_count = 1
         for message in messages:
             timestamp_gmt3 = convert_to_gmt3(message[4])
-            message_id = message[1][0] if isinstance(message[1], tuple) else message[1]
+            message_id = message[7]
             sender = 'Пользователь' if message[2] == 'user' else '👨‍💻 Агент поддержки'
             if message[2] == 'agent':
                 agent_id = message[5]
