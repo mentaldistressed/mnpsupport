@@ -711,7 +711,7 @@ def history(update: Update, context: CallbackContext) -> None:
             if message[2] == 'agent':
                 agent_id = message[5]
                 agent_number = get_agent_number(message[5])
-                message_text += f' (ID: {message_id})'
+                message += f' (ID: {message_id})'
 
                 sender = f'👨‍💻 Агент поддержки #{agent_number}'
 
