@@ -720,9 +720,10 @@ def history(update: Update, context: CallbackContext) -> None:
                 sender = f'👨‍💻 Агент поддержки #{agent_number}'
 
                 if user_message_id:
-                    message_text += f' (ID: {user_message_id})'
+                    # message_text += f' (ID: {user_message_id})'
+                    message_text2 = f'ID: {user_message_id}'
 
-            response += f'[{timestamp_gmt3}] — {sender}: {message_text}\n'
+            response += f'[{timestamp_gmt3}] — {message_text2} — {sender}: {message_text}\n'
 
         max_message_length = 4096
         response_lines = response.split('\n')
