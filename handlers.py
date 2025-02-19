@@ -223,11 +223,12 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                     add_message_to_ticket(ticket_id, 'user', message_text, None, None)
                     notification_text = (f'🔔 Добавлено сообщение к обращению №{ticket_id} от пользователя @{update.message.from_user.username} '
                                         f'(Telegram ID: {update.message.from_user.id}): {message_text}')
+                    update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
                 else:
                     ticket_id = create_ticket(user_id, '1', message_text, update.message.from_user.username)
                     notification_text = (f'🔔 Создано обращение №{ticket_id} от пользователя @{update.message.from_user.username} '
                                         f'(Telegram ID: {update.message.from_user.id}): {message_text}')
-                    update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
+                    update.message.reply_text('✉️ Ваше сообщение было отправлено агентам поддержки, ожидайте ответа')
             else:
                 keyboard = [
                     [InlineKeyboardButton("👉 Подписаться на канал", url=f"https://t.me/gta_mn")],
