@@ -3,9 +3,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
-from db import create_ticket, get_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_block_reason, get_username_by_id, get_statistics, edit_ticket_message, get_tickets_by_user
+from db import create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason, get_message_info
 from utils import status_mapping, QUICK_RESPONSES
-from ping3 import ping, verbose_ping
 from typing import List, Tuple
 import os
 import time
@@ -92,6 +91,38 @@ def check_tickets(update: Update, context: CallbackContext) -> None:
         else:
             update.message.reply_text(f'❌ У пользователя с ID {user_id} нет обращений')
 
+def check_block(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+
+    if chat_id != agents_chat_id:
+        update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
+        return
+
+    args = context.args
+    if len(args) < 1:
+        update.message.reply_text("Использование: /check_block [ID пользователя]")
+        return
+
+    try:
+        user_id = int(args[0])
+        block_reason = get_block_reason(user_id)
+
+        if block_reason:
+            update.message.reply_text(
+                f"🔒 Пользователь с ID <code>{user_id}</code> заблокирован.\nПричина: <b>{block_reason}</b>",
+                parse_mode=ParseMode.HTML
+            )
+        else:
+            update.message.reply_text(
+                f"✅ Пользователь с ID <code>{user_id}</code> не заблокирован.",
+                parse_mode=ParseMode.HTML
+            )
+
+    except ValueError:
+        update.message.reply_text("❌ Указан некорректный ID пользователя. Используйте числовой ID.")
+    except Exception as e:
+        update.message.reply_text(f"❌ Произошла ошибка: {e}")
+
 def fileid(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     args = context.args
@@ -168,7 +199,7 @@ def hhelp(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
         return
     
-    response = f'Функционал агента поддержки:\n\n/view — просмотр всех обращений\n/hhelp — команды, доступные для агента поддержки\n/ansid [Telegram ID] [сообщение] — сообщение пользователю по TG ID\n/ans [ID обращения] [сообщение] — ответ на обращение\n/edit [ID сообщения] [Новое сообщение] — редактирование сообщения\n/history [ID обращения] — просмотр сообщений во всём обращении\n/check_tickets [ID пользователя] — просмотр всех обращений пользователя\n/status [ID обращения] [новый статус (1 - open, 2 - pending, 3 - closed)] —  смена статуса обращения\n/block [Telegram ID] [Причина блокировки] — ограничить пользователя в создании новых обращений'
+    response = f'❓ Функционал агента поддержки:\n\n/view — просмотр всех обращений\n/hhelp — команды, доступные для агента поддержки\n/ansid [Telegram ID] [сообщение] — сообщение пользователю по TG ID\n/ans [ID обращения] [сообщение] — ответ на обращение\n/edit [ID сообщения] [Новое сообщение] — редактирование сообщения\n/history [ID обращения] — просмотр сообщений во всём обращении\n/check_tickets [ID пользователя] — просмотр всех обращений пользователя\n/status [ID обращения] [новый статус (1 - open, 2 - pending, 3 - closed)] —  смена статуса обращения\n/block [Telegram ID] [Причина блокировки] — ограничить пользователя в создании новых обращений'
     update.message.reply_text(response)
 
 def block(update: Update, context: CallbackContext) -> None:
@@ -249,15 +280,7 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f'🚫 У Вас ограничен доступ к написанию обращений в техническую поддержку')
         return
     if chat_id == agents_chat_id:
-        if context.user_data.get('awaiting_photo'):
-            photo_file = update.message.photo[-1].get_file()
-            file_id = photo_file.file_id
-            short_id = generate_short_id(file_id)
-            save_photo(short_id, file_id)
-            update.message.reply_text(f'Фото загружено. ID фото: {short_id}')
-            context.user_data['awaiting_photo'] = False
-        else:
-            return
+        return
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
@@ -324,12 +347,38 @@ def reboot(update: Update, context: CallbackContext) -> None:
 
 #     update.message.reply_text('Ответ отправлен пользователю.')
 
-def save_response_to_db(ticket_id, agent_id, message):
-    cursor.execute('''
-        INSERT INTO ticket_history (ticket_id, sender, message, timestamp, agent_id)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (ticket_id, 'agent', message, datetime.now(), agent_id))
-    connection.commit()
+def delete_message(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    if chat_id != agents_chat_id:
+        return
+
+    args = context.args
+    if len(args) < 1:
+        update.message.reply_text("Использование: /delete [ID сообщения]")
+        return
+
+    try:
+        message_id = int(args[0])
+
+        success, user_message_id, ticket_id = get_message_info(message_id)
+
+        if success:
+            user_chat_id = get_user_id_by_ticket(ticket_id)
+            if user_message_id:
+                try:
+                    context.bot.delete_message(chat_id=user_chat_id, message_id=user_message_id)
+                except Exception as e:
+                    update.message.reply_text(f"Ошибка удаления: {e}")
+                    return
+            
+            update.message.reply_text(f"✅ Сообщение с ID {message_id} удалено")
+        else:
+            update.message.reply_text(f"❌ Сообщение с ID {message_id} не найдено")
+
+    except ValueError:
+        update.message.reply_text("❌ Ошибка: ID сообщения должен быть числом")
+    except Exception as e:
+        update.message.reply_text(f"❌ Ошибка: {e}")
 
 def edit(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
@@ -357,15 +406,18 @@ def edit(update: Update, context: CallbackContext) -> None:
                         chat_id=user_chat_id,
                         message_id=user_message_id,
                         text=final_message,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
                 except Exception as e:
                     print(e)
-            update.message.reply_text(f"Сообщение с ID {message_id} отредактировано")
+            update.message.reply_text(f"✅ Сообщение с ID {message_id} отредактировано")
         else:
-            update.message.reply_text(f"Сообщение с ID {message_id} не найдено")
+            update.message.reply_text(f"❌ Сообщение с ID {message_id} не найдено")
+        
+    except ValueError:
+        update.message.reply_text("❌ Ошибка: ID сообщения должен быть числом")
     except Exception as e:
-        print(e)
+        update.message.reply_text(f"❌ Ошибка: {e}")
 
 def qinfo(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
@@ -477,27 +529,6 @@ def answer_ticket(update: Update, context: CallbackContext) -> None:
     finally:
         cursor.close()
         conn.close()
-
-def get_ticket_by_id(ticket_id):
-    conn = sqlite3.connect('support.db')
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT id, user_id, status, message, username FROM tickets WHERE id = ?", (ticket_id,))
-    
-    ticket = cursor.fetchone()
-
-    conn.close()
-
-    if ticket:
-        return {
-            'ticket_id': ticket[0],
-            'user_id': ticket[1],
-            'status': ticket[2],
-            'message': ticket[3],
-            'username': ticket[4]
-        }
-    else:
-        return None
 
 def is_short_id(id_str: str) -> bool:
     return len(id_str) == 8 and all(c in '0123456789abcdef' for c in id_str)
@@ -727,8 +758,6 @@ def button_callback(update: Update, context: CallbackContext) -> None:
                     response += f'⚪️ №{ticket_id}. Обращение от пользователя @{username} с ID <code>{user_id}</code>, имеющее статус <b>«🟡 {status_mapping[status]}»</b>: {message}\n'
                 elif status == '3':
                     response += f'⚪️ №{ticket_id}. Обращение от пользователя @{username} с ID <code>{user_id}</code>, имеющее статус <b>«🔴 {status_mapping[status]}»</b>: {message}\n'
-    elif query.data == 'hhelp':
-        response = f'Функционал агента поддержки:\n\n/view — просмотр всех обращений\n/hhelp — команды, доступные для агента поддержки\n/ansid [Telegram ID] [сообщение] — сообщение пользователю по TG ID\n/ans [ID обращения] [сообщение] — ответ на обращение\n/history [ID обращения] — просмотр сообщений во всём обращении\n/status [ID обращения] [новый статус (1 - open, 2 - pending, 3 - closed)] —  смена статуса обращения\n/block [Telegram ID] [Причина блокировки] — ограничить пользователя в создании новых обращений'
     elif query.data.startswith("tickets_"):
         view_tickets(update, context)
     elif query.data == 'start':

@@ -1,6 +1,6 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext
 from config import TOKEN, agents_chat_id, DATABASE_FILE, backup_chat_id
-from handlers import fileid, start, handle_message, answer_ticket, change_ticket_status, view_tickets, button_callback, history, handle_photo, ansid, handle_video, reboot, block, stats, edit, hhelp, check_tickets, quick_answer_ticket, qinfo
+from handlers import fileid, start, handle_message, answer_ticket, change_ticket_status, view_tickets, button_callback, history, handle_photo, ansid, handle_video, reboot, block, stats, edit, hhelp, check_tickets, quick_answer_ticket, qinfo, check_block, delete_message
 import os
 import threading
 import time
@@ -11,12 +11,12 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 def notify_agents(context: CallbackContext):
-    context.bot.send_message(chat_id=agents_chat_id, text="✅ Выполнен запуск/перезагрузка поллинга, текущая версия: 001-release. Резервные копирования: включены")
+    context.bot.send_message(chat_id=agents_chat_id, text="✅ Выполнен запуск/перезагрузка поллинга, текущая версия: 1.0.0-release. Резервные копирования: включены")
 
 def stop_polling_notification(updater: Updater) -> None:
     updater.bot.send_message(
         chat_id=agents_chat_id,
-        text="🔴 Выполнена остановка поллинга, текущая версия: 001-release."
+        text="🔴 Выполнена остановка поллинга, текущая версия: 1.0.0-release."
     )
 
 def send_backup(bot) -> None:
@@ -49,13 +49,15 @@ def main():
     dispatcher.add_handler(CommandHandler("check_tickets", check_tickets))
     dispatcher.add_handler(CommandHandler('qans', quick_answer_ticket))
     dispatcher.add_handler(CommandHandler('qinfo', qinfo))
+    dispatcher.add_handler(CommandHandler('check_block', check_block))
+    dispatcher.add_handler(CommandHandler('delete', delete_message))
 
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
     dispatcher.add_handler(MessageHandler(Filters.video, handle_video))
     dispatcher.add_handler(MessageHandler(Filters.photo, handle_photo))
     dispatcher.add_handler(CallbackQueryHandler(button_callback))
 
-    updater.job_queue.run_once(notify_agents, when=0)
+    # updater.job_queue.run_once(notify_agents, when=0)
 
     backup_thread = threading.Thread(target=backup_scheduler, args=(updater,))
     backup_thread.daemon = True
@@ -65,7 +67,7 @@ def main():
         updater.start_polling()
         updater.idle()
     finally:
-        stop_polling_notification(updater)
+        # stop_polling_notification(updater)
         python = sys.executable
         os.execlp('python3', 'python3', *os.path.abspath(__file__))
     
