@@ -720,7 +720,7 @@ def history(update: Update, context: CallbackContext) -> None:
                 sender = f'👨‍💻 Агент поддержки #{agent_number}'
 
                 if user_message_id:
-                    message_text += f' (ID: {user_message_id})'
+                    message_text += f' <b>(ID: {user_message_id})</b>'
 
             response += f'[{timestamp_gmt3}] — {sender}: {message_text}\n'
 
