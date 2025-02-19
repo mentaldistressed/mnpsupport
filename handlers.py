@@ -742,13 +742,15 @@ def history(update: Update, context: CallbackContext) -> None:
 
         for attachment in attachments:
             file_id = attachment[2]
+            escaped_file_id = escape_markdown(file_id)
             time.sleep(1)
-            context.bot.send_message(chat_id=chat_id, text=f'📸 Вложение №{attachment_count} (file_id: `{file_id}`)', parse_mode=ParseMode.MARKDOWN)
-            context.bot.send_photo(chat_id=chat_id, photo=file_id)
+            context.bot.send_message(chat_id=chat_id, text=f'📸 Вложение №{attachment_count}', parse_mode=ParseMode.MARKDOWN)
+            context.bot.send_photo(chat_id=chat_id, photo=attachment[2])
             attachment_count += 1
             
     else:
         update.message.reply_text(f'История для обращения с ID {ticket_id} не найдена')
+
 def button_callback(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     query = update.callback_query
