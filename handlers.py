@@ -22,7 +22,7 @@ def escape_markdown(text):
 
 agent_numbers = {
     785092711: 3,
-    7897895019: 6,
+    7897895019: 2,
     5427059231: 1
 }
 
@@ -678,7 +678,7 @@ def convert_to_timezone(timestamp_str, timezone):
 
 def get_agent_number(agent_id):
     if agent_id == 7897895019:
-        return 6
+        return 2
     elif agent_id == 5427059231:
         return 1
     elif agent_id == 785092711:
