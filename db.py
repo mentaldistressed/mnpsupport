@@ -31,6 +31,7 @@ def initialize_database():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS blocks (
         user_id INTEGER PRIMARY KEY,
+        agent_id INTEGER,
         reason TEXT
     )
     ''')
@@ -264,10 +265,10 @@ def get_user_by_id(user_id):
     conn.close()
     return user
 
-def block_user(user_id, reason):
+def block_user(user_id, agent_id, reason):
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
-    cursor.execute('INSERT OR IGNORE INTO blocks (user_id, reason) VALUES (?, ?)', (user_id, reason))
+    cursor.execute('INSERT OR IGNORE INTO blocks (user_id, agent_id, reason) VALUES (?, ?, ?)', (user_id, agent_id, reason))
     conn.commit()
     cursor.close()
     conn.close()

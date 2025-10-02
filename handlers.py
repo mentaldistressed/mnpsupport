@@ -214,17 +214,26 @@ def block(update: Update, context: CallbackContext) -> None:
     try:
         user_id = int(args[0])
         reason = ' '.join(args[1:])
-        
+        agent_tgid = update.message.from_user.id
+        agent_id = get_agent_number(agent_tgid)
+
         user_info = context.bot.get_chat(user_id)
         blocked_username = user_info.username if user_info.username else 'unknown'
 
-        block_user(user_id, reason)
-        update.message.reply_text(f'‼️ Выдана блокировка пользователю @{blocked_username} (Telegram ID: {user_id}): {reason}')
-        context.bot.send_message(chat_id=user_id, text=f'🚫 Вам ограничили доступ к написанию обращений в техническую поддержку. Причина: {reason}')
+        block_user(user_id, agent_id, reason)
+        update.message.reply_text(
+            f'‼️ Выдана блокировка пользователю @{blocked_username} (Telegram ID: {user_id}): {reason}'
+        )
+        context.bot.send_message(
+            chat_id=user_id,
+            text=f'🚫 Вам ограничили доступ к написанию обращений в техническую поддержку. Причина: {reason}'
+        )
+
     except ValueError:
         update.message.reply_text('Некорректный ID пользователя.')
     except Exception as e:
         update.message.reply_text(f'Произошла ошибка: {e}')
+
 
 def handle_video(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("❌ К сожалению, отправка видео недоступна. Пожалуйста, загрузите его на YouTube и предоставьте ссылку для просмотра")
