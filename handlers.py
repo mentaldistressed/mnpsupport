@@ -320,7 +320,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text('⚠️ Для начала взаимодействия с помощником Вам необходимо подписаться на наш новостной канал', reply_markup=reply_markup)
 
-        context.bot.send_message(chat_id=agents_chat_id, text=notification_text, parse_mode=ParseMode.HTML)
+        context.bot.send_message(chat_id=agents_chat_id, text=notification_text)
 
     except sqlite3.Error as e:
         print(f'Ошибка работы с базой данных: {e}')
@@ -353,7 +353,7 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
             notification_text = (f'📷 Создано обращение с фотографией №{ticket_id} от пользователя @{update.message.from_user.username} (Telegram ID: {update.message.from_user.id}) (File ID: <code>{photo_file}</code>)')
             update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
 
-        context.bot.send_message(chat_id=agents_chat_id, text=notification_text)
+        context.bot.send_message(chat_id=agents_chat_id, text=notification_text, parse_mode=ParseMode.HTML)
 
     except sqlite3.Error as e:
         print(f'Ошибка работы с базой данных: {e}')
