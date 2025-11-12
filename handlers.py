@@ -148,7 +148,7 @@ def unblock(update: Update, context: CallbackContext) -> None:
 
     args = context.args
     if not args:
-        update.message.reply_text("Использование: /unblock [ID пользователя]")
+        update.message.reply_text("Использование: /unblock [Telegram ID]")
         return
 
     user_id = int(args[0])
