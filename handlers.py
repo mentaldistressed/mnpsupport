@@ -141,7 +141,28 @@ def fileid(update: Update, context: CallbackContext) -> None:
     context.bot.send_photo(chat_id=chat_id, photo=attachment)
 
 def block_list(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text(f'undefined error')
+    chat_id = update.effective_chat.id
+    if chat_id != agents_chat_id:
+        update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
+        return
+
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, reason, agent_id FROM blocks")
+    blocks = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if not blocks:
+        update.message.reply_text("🔹 Нет заблокированных пользователей")
+        return
+
+    response = "🔒 Список заблокированных пользователей:\n\n"
+    for user_id, reason, agent_id in blocks:
+        agent_number = get_agent_number(agent_id)
+        response += f"👤 {user_id} — Причина: {reason} — Выдано агентом #{agent_number}\n"
+
+    update.message.reply_text(response)
 
 def stats(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
