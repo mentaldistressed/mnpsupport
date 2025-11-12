@@ -296,33 +296,37 @@ def rating_stats(update: Update, context: CallbackContext) -> None:
             return
 
         cursor.execute("""
-            SELECT agent_id, ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS total
+            SELECT agent_id, 
+                   ROUND(AVG(rating), 2) AS avg_rating,
+                   COUNT(*) AS total_ratings
             FROM ratings
             GROUP BY agent_id
-            ORDER BY avg_rating DESC
+            ORDER BY total_ratings DESC, avg_rating DESC
         """)
-        data = cursor.fetchall()
+        agents = cursor.fetchall()
         cursor.close()
         conn.close()
 
-        response = "📊 <b>Статистика рейтингов агентов поддержки</b>\n\n"
+        response = "📊 <b>Рейтинг агентов поддержки</b>\n\n"
 
-        best_agent = max(data, key=lambda x: x[1])
-        worst_agent = min(data, key=lambda x: x[1])
-
-        for agent_id, avg_rating, total in data:
+        for position, (agent_id, avg_rating, total_ratings) in enumerate(agents, start=1):
             agent_number = agent_id
             stars = "⭐" * int(round(avg_rating)) + "☆" * (5 - int(round(avg_rating)))
 
-            if agent_id == best_agent[0]:
-                medal = "🏆"
-            elif agent_id == worst_agent[0]:
-                medal = "👎"
+            if position == 1:
+                medal = "🥇"
+            elif position == 2:
+                medal = "🥈"
+            elif position == 3:
+                medal = "🥉"
             else:
                 medal = "⚙️"
 
-            response += f"{medal} <b>Агент #{agent_number}</b> — {stars} ({avg_rating}/5)\n"
-            response += f" 📈 Кол-во оценок: {total}\n\n"
+            response += (
+                f"{medal} <b>Агент #{agent_number}</b>\n"
+                f" {stars} ({avg_rating}/5)\n"
+                f" 🧾 Оценок: {total_ratings}\n\n"
+            )
 
         update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
