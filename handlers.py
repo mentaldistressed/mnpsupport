@@ -159,7 +159,7 @@ def block_list(update: Update, context: CallbackContext) -> None:
 
     response = "🔒 Список заблокированных пользователей:\n\n"
     for user_id, reason, agent_id in blocks:
-        agent_number = get_agent_number(agent_id)
+        agent_number = agent_id
         response += f"👤 {user_id} — Причина: {reason} — Выдано агентом #{agent_number}\n"
 
     update.message.reply_text(response)
