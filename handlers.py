@@ -661,39 +661,6 @@ def change_ticket_status(update: Update, context: CallbackContext) -> None:
         cursor.close()
         conn.close()
 
-def rating_callback(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-
-    data = query.data  # формат rate_<ticket_id>_<rating>
-    _, ticket_id_str, rating_str = data.split('_')
-    ticket_id = int(ticket_id_str)
-    rating = int(rating_str)
-    user_id = query.from_user.id
-
-    # Получаем последнего агента, который отвечал на тикет
-    agent_id = get_last_agent_id(ticket_id)
-    if not agent_id:
-        query.edit_message_text("❌ Не удалось определить агента для оценки")
-        return
-
-    # Сохраняем оценку
-    conn = sqlite3.connect(DATABASE_FILE)
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO ratings (ticket_id, agent_id, user_id, rating) VALUES (?, ?, ?, ?)',
-                   (ticket_id, agent_id, user_id, rating))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    query.edit_message_text(f"Спасибо за оценку! Вы поставили {rating}⭐️")
-
-    context.bot.send_message(
-        chat_id=agents_chat_id,
-        text=f"🔔 Пользователь <b>{user_id}</b> оценил работу агента <b>{agent_id}</b> по тикету №{ticket_id} на {rating}⭐️",
-        parse_mode=ParseMode.HTML
-    )
-
 def paginate_tickets(tickets, page, items_per_page=15):
     start = page * items_per_page
     end = start + items_per_page
@@ -865,6 +832,41 @@ def button_callback(update: Update, context: CallbackContext) -> None:
 
     response = None
 
+    if query.data.startswith("rate_"):
+        try:
+            # Формат: rate_<ticket_id>_<rating>
+            _, ticket_id_str, rating_str = query.data.split('_')
+            ticket_id = int(ticket_id_str)
+            rating = int(rating_str)
+            user_id = query.from_user.id
+
+            # Получаем последнего агента по тикету
+            agent_id = get_last_agent_id(ticket_id)
+            if not agent_id:
+                response = "❌ Не удалось определить агента для оценки"
+            else:
+                # Сохраняем оценку
+                conn = sqlite3.connect(DATABASE_FILE)
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO ratings (ticket_id, agent_id, user_id, rating) VALUES (?, ?, ?, ?)",
+                    (ticket_id, agent_id, user_id, rating)
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                response = f"Спасибо за оценку! Вы поставили {rating}⭐️"
+
+                # Уведомляем агентов
+                context.bot.send_message(
+                    chat_id=agents_chat_id,
+                    text=f"🔔 Пользователь <b>{user_id}</b> оценил работу агента <b>{agent_id}</b> по тикету №{ticket_id} на {rating}⭐️",
+                    parse_mode=ParseMode.HTML
+                )
+
+        except Exception as e:
+            response = f"❌ Ошибка при сохранении оценки: {e}"
     if query.data == 'all_tickets':
         tickets = get_all_tickets()
         if tickets:
