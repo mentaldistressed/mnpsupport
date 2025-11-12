@@ -278,6 +278,56 @@ def block(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         update.message.reply_text(f'Произошла ошибка: {e}')
 
+def rating_stats(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+
+    # if chat_id != agents_chat_id:
+    #     update.message.reply_text("❌ У вас нет прав для выполнения этой команды.")
+    #     return
+
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM ratings")
+        total_ratings = cursor.fetchone()[0]
+        if total_ratings == 0:
+            update.message.reply_text("😔 Пока нет ни одной оценки.")
+            return
+
+        cursor.execute("""
+            SELECT agent_id, ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS total
+            FROM ratings
+            GROUP BY agent_id
+            ORDER BY avg_rating DESC
+        """)
+        data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        response = "📊 <b>Статистика рейтингов агентов поддержки</b>\n\n"
+
+        best_agent = max(data, key=lambda x: x[1])
+        worst_agent = min(data, key=lambda x: x[1])
+
+        for agent_id, avg_rating, total in data:
+            agent_number = get_agent_number(agent_id)
+            stars = "⭐" * int(round(avg_rating)) + "☆" * (5 - int(round(avg_rating)))
+
+            if agent_id == best_agent[0]:
+                medal = "🏆"
+            elif agent_id == worst_agent[0]:
+                medal = "👎"
+            else:
+                medal = "⚙️"
+
+            response += f"{medal} <b>Агент #{agent_number}</b> — {stars} ({avg_rating}/5)\n"
+            response += f" 📈 Кол-во оценок: {total}\n\n"
+
+        update.message.reply_text(response, parse_mode=ParseMode.HTML)
+
+    except sqlite3.Error as e:
+        update.message.reply_text(f"Ошибка при получении статистики: {e}")
 
 def handle_video(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("❌ К сожалению, отправка видео недоступна. Пожалуйста, загрузите его на YouTube и предоставьте ссылку для просмотра")
