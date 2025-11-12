@@ -323,7 +323,7 @@ def rating_stats(update: Update, context: CallbackContext) -> None:
                 medal = "⚙️"
 
             response += (
-                f"{medal} <b>Агент #{agent_number}</b> ({agent_id})\n"
+                f"{medal} <b>Агент #{agent_number}</b>\n"
                 f" {stars} ({avg_rating}/5)\n"
                 f" 🧾 Оценок: {total_ratings}\n\n"
             )
