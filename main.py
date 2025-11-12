@@ -7,7 +7,7 @@ import time
 import sys
 import logging
 
-version = '1.0.1-release'
+version = '1.0.1.1 / Bundle: Release'
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ def notify_agents(context: CallbackContext):
 def stop_polling_notification(updater: Updater) -> None:
     updater.bot.send_message(
         chat_id=agents_chat_id,
-        text="🔴 Выполнена остановка поллинга, текущая версия: {version}."
+        text="🔴 Выполнена остановка поллинга, текущая версия: " + version + "."
     )
 
 def send_backup(bot) -> None:
