@@ -642,7 +642,6 @@ def change_ticket_status(update: Update, context: CallbackContext) -> None:
             parse_mode=ParseMode.HTML
         )
 
-        # Если тикет закрыт — отправляем кнопки оценки
         if new_status == '3':
             keyboard = [
                 [InlineKeyboardButton("⭐️ 1", callback_data=f"rate_{ticket_id}_1"),
@@ -841,7 +840,7 @@ def button_callback(update: Update, context: CallbackContext) -> None:
             user_id = query.from_user.id
 
             # Получаем последнего агента по тикету
-            agent_id = get_last_agent_id(ticket_id)
+            agent_id = get_agent_number(get_last_agent_id(ticket_id))
             if not agent_id:
                 response = "❌ Не удалось определить агента для оценки"
             else:
