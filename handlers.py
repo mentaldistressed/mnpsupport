@@ -55,7 +55,7 @@ def check_tickets(update: Update, context: CallbackContext) -> None:
 
         args = context.args
         if len(args) != 1:
-            update.message.reply_text("Использование: /checktickets [Циферный ID Telegram]")
+            update.message.reply_text("Использование: /check_tickets [Telegram ID]")
             return
         
         try:
