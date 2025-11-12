@@ -217,13 +217,12 @@ def block(update: Update, context: CallbackContext) -> None:
     try:
         user_id = int(args[0])
         reason = ' '.join(args[1:])
-        agent_tgid = update.message.from_user.id
-        agent_id = get_agent_number(agent_tgid)
+        agent_id = get_agent_number(update.message.from_user.id)
 
         user_info = context.bot.get_chat(user_id)
         blocked_username = user_info.username if user_info.username else 'unknown'
 
-        block_user(user_id, agent_id, reason)
+        block_user(user_id, reason, agent_id)
         update.message.reply_text(
             f'‼️ Выдана блокировка пользователю @{blocked_username} (Telegram ID: {user_id}): {reason}'
         )
