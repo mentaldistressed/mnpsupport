@@ -29,6 +29,16 @@ def initialize_database():
                         file_id TEXT
                       )''')
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ratings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER,
+            agent_id INTEGER,
+            user_id INTEGER,
+            rating INTEGER,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
     CREATE TABLE IF NOT EXISTS blocks (
         user_id INTEGER PRIMARY KEY,
         agent_id INTEGER,
