@@ -644,14 +644,14 @@ def change_ticket_status(update: Update, context: CallbackContext) -> None:
 
         if new_status == '3':
             keyboard = [
-                [InlineKeyboardButton("⭐️ 1", callback_data=f"rate_{ticket_id}_1"),
-                 InlineKeyboardButton("⭐️ 2", callback_data=f"rate_{ticket_id}_2"),
-                 InlineKeyboardButton("⭐️ 3", callback_data=f"rate_{ticket_id}_3"),
-                 InlineKeyboardButton("⭐️ 4", callback_data=f"rate_{ticket_id}_4"),
-                 InlineKeyboardButton("⭐️ 5", callback_data=f"rate_{ticket_id}_5")]
+                [InlineKeyboardButton("1 ⭐️", callback_data=f"rate_{ticket_id}_1"),
+                 InlineKeyboardButton("2 ⭐️ ", callback_data=f"rate_{ticket_id}_2"),
+                 InlineKeyboardButton("3 ⭐️", callback_data=f"rate_{ticket_id}_3"),
+                 InlineKeyboardButton("4 ⭐️", callback_data=f"rate_{ticket_id}_4"),
+                 InlineKeyboardButton("5 ⭐️", callback_data=f"rate_{ticket_id}_5")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            context.bot.send_message(chat_id=user_id, text="Пожалуйста, оцените работу агента:", reply_markup=reply_markup)
+            context.bot.send_message(chat_id=user_id, text="⭐ Пожалуйста, оцените работу агента:", reply_markup=reply_markup)
 
     except sqlite3.Error as e:
         update.message.reply_text(f'Ошибка работы с базой данных: {e}')
