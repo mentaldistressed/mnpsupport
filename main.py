@@ -60,7 +60,7 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.video, handle_video))
     dispatcher.add_handler(MessageHandler(Filters.photo, handle_photo))
     dispatcher.add_handler(CallbackQueryHandler(button_callback))
-    dispatcher.add_handler(CallbackQueryHandler(rating_callback, pattern="^rate_"))
+    # dispatcher.add_handler(CallbackQueryHandler(rating_callback, pattern="^rate_"))
 
     updater.job_queue.run_once(notify_agents, when=0)
 
