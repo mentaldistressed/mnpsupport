@@ -311,7 +311,7 @@ def rating_stats(update: Update, context: CallbackContext) -> None:
         worst_agent = min(data, key=lambda x: x[1])
 
         for agent_id, avg_rating, total in data:
-            agent_number = get_agent_number(agent_id)
+            agent_number = agent_id
             stars = "⭐" * int(round(avg_rating)) + "☆" * (5 - int(round(avg_rating)))
 
             if agent_id == best_agent[0]:
