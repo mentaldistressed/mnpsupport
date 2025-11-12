@@ -123,12 +123,12 @@ def check_block(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         update.message.reply_text(f"❌ Произошла ошибка: {e}")
 
-def fileid(update: Update, context: CallbackContext) -> None:
+def attach(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     args = context.args
 
     if len(args) < 1:
-        update.message.reply_text('Использование: /fileid [ID файла]')
+        update.message.reply_text('Использование: /attach [ID файла]')
         return
     
     file_id = args[0]
@@ -244,7 +244,7 @@ def hhelp(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
         return
     
-    response = f'❓ Функционал агента поддержки:\n\n/view — просмотр всех обращений\n/hhelp — команды, доступные для агента поддержки\n/ansid [Telegram ID] [сообщение] — сообщение пользователю по TG ID\n/ans [ID обращения] [сообщение] — ответ на обращение\n/edit [ID сообщения] [Новое сообщение] — редактирование сообщения\n/history [ID обращения] — просмотр сообщений во всём обращении\n/check_tickets [ID пользователя] — просмотр всех обращений пользователя\n/status [ID обращения] [новый статус (1 - open, 2 - pending, 3 - closed)] —  смена статуса обращения\n/block [Telegram ID] [Причина блокировки] — ограничить пользователя в создании новых обращений\n/unblock [Telegram ID] — снять с пользователя ограничение в создании новых обращений\n/block_list — просмотр списка заблокированных пользователей'
+    response = f'❓ Функционал агента поддержки:\n\n/view — просмотр всех обращений\n/hhelp — команды, доступные для агента поддержки\n/ansid [Telegram ID] [сообщение] — сообщение пользователю по TG ID\n/ans [ID обращения] [сообщение] — ответ на обращение\n/edit [ID сообщения] [Новое сообщение] — редактирование сообщения\n/attach [ID вложения] — просмотр конкретного вложения\n/history [ID обращения] — просмотр сообщений во всём обращении\n/check_tickets [ID пользователя] — просмотр всех обращений пользователя\n/status [ID обращения] [новый статус (1 - open, 2 - pending, 3 - closed)] —  смена статуса обращения\n/block [Telegram ID] [Причина блокировки] — ограничить пользователя в создании новых обращений\n/unblock [Telegram ID] — снять с пользователя ограничение в создании новых обращений\n/block_list — просмотр списка заблокированных пользователей'
     update.message.reply_text(response)
 
 def block(update: Update, context: CallbackContext) -> None:
