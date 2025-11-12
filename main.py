@@ -13,7 +13,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 def notify_agents(context: CallbackContext):
-    context.bot.send_message(chat_id=agents_chat_id, text="✅ Выполнен запуск/перезагрузка поллинга, текущая версия: {version}. Резервные копирования: включены")
+    context.bot.send_message(chat_id=agents_chat_id, text="✅ Выполнен запуск/перезагрузка поллинга, текущая версия: " + version + ". Резервные копирования: включены")
 
 def stop_polling_notification(updater: Updater) -> None:
     updater.bot.send_message(
