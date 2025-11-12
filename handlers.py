@@ -860,7 +860,7 @@ def button_callback(update: Update, context: CallbackContext) -> None:
                 # Уведомляем агентов
                 context.bot.send_message(
                     chat_id=agents_chat_id,
-                    text=f"🔔 Пользователь <b>{user_id}</b> оценил работу агента <b>{agent_id}</b> по тикету №{ticket_id} на {rating}⭐️",
+                    text=f"🔔 Пользователь <b>{user_id}</b> оценил работу агента #<b>{agent_id}</b> по тикету №{ticket_id} на {rating}⭐️",
                     parse_mode=ParseMode.HTML
                 )
 
