@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
-from db import create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason, get_message_info, delete_message_from_history
+from db import get_last_agent_id, create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason, get_message_info, delete_message_from_history
 from utils import status_mapping, QUICK_RESPONSES
 from typing import List, Tuple
 import os
@@ -621,7 +621,7 @@ def change_ticket_status(update: Update, context: CallbackContext) -> None:
     new_status = args[1]
 
     if new_status not in ['1', '2', '3']:
-        update.message.reply_text('❌ Вы указали некорректный номер статуса: статус должен быть 1 (open), 2 (pending) или 3 (closed).')
+        update.message.reply_text('❌ Некорректный статус: 1 (open), 2 (pending), 3 (closed)')
         return
 
     try:
@@ -631,8 +631,28 @@ def change_ticket_status(update: Update, context: CallbackContext) -> None:
         user_id = cursor.fetchone()[0]
 
         update_ticket_status(ticket_id, new_status)
-        context.bot.send_message(parse_mode=ParseMode.HTML, chat_id=user_id, text=f'🔔 Вашему обращению (№{ticket_id}) присвоен статус <b>«{status_mapping[new_status]}»</b>')
-        update.message.reply_text(f'🔔 Обращению №{ticket_id} присвоен статус <b>«{status_mapping[new_status]}»</b>', parse_mode=ParseMode.HTML)
+        context.bot.send_message(
+            parse_mode=ParseMode.HTML,
+            chat_id=user_id,
+            text=f'🔔 Вашему обращению (№{ticket_id}) присвоен статус <b>«{status_mapping[new_status]}»</b>'
+        )
+
+        update.message.reply_text(
+            f'🔔 Обращению №{ticket_id} присвоен статус <b>«{status_mapping[new_status]}»</b>',
+            parse_mode=ParseMode.HTML
+        )
+
+        # Если тикет закрыт — отправляем кнопки оценки
+        if new_status == '3':
+            keyboard = [
+                [InlineKeyboardButton("⭐️ 1", callback_data=f"rate_{ticket_id}_1"),
+                 InlineKeyboardButton("⭐️ 2", callback_data=f"rate_{ticket_id}_2"),
+                 InlineKeyboardButton("⭐️ 3", callback_data=f"rate_{ticket_id}_3"),
+                 InlineKeyboardButton("⭐️ 4", callback_data=f"rate_{ticket_id}_4"),
+                 InlineKeyboardButton("⭐️ 5", callback_data=f"rate_{ticket_id}_5")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            context.bot.send_message(chat_id=user_id, text="Пожалуйста, оцените работу агента:", reply_markup=reply_markup)
 
     except sqlite3.Error as e:
         update.message.reply_text(f'Ошибка работы с базой данных: {e}')
@@ -640,6 +660,39 @@ def change_ticket_status(update: Update, context: CallbackContext) -> None:
     finally:
         cursor.close()
         conn.close()
+
+def rating_callback(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+
+    data = query.data  # формат rate_<ticket_id>_<rating>
+    _, ticket_id_str, rating_str = data.split('_')
+    ticket_id = int(ticket_id_str)
+    rating = int(rating_str)
+    user_id = query.from_user.id
+
+    # Получаем последнего агента, который отвечал на тикет
+    agent_id = get_last_agent_id(ticket_id)
+    if not agent_id:
+        query.edit_message_text("❌ Не удалось определить агента для оценки")
+        return
+
+    # Сохраняем оценку
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO ratings (ticket_id, agent_id, user_id, rating) VALUES (?, ?, ?, ?)',
+                   (ticket_id, agent_id, user_id, rating))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    query.edit_message_text(f"Спасибо за оценку! Вы поставили {rating}⭐️")
+
+    context.bot.send_message(
+        chat_id=agents_chat_id,
+        text=f"🔔 Пользователь <b>{user_id}</b> оценил работу агента <b>{agent_id}</b> по тикету №{ticket_id} на {rating}⭐️",
+        parse_mode=ParseMode.HTML
+    )
 
 def paginate_tickets(tickets, page, items_per_page=15):
     start = page * items_per_page

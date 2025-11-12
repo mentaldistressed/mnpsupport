@@ -209,6 +209,33 @@ def add_message_to_ticket(ticket_id, sender, message, agent_id, user_message_id)
     conn.close()
     return cursor.lastrowid
 
+def get_last_agent_id(ticket_id):
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute('SELECT agent_id FROM ticket_history WHERE ticket_id = ? AND sender = "agent" ORDER BY timestamp DESC LIMIT 1',
+                   (ticket_id,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result[0] if result else None
+
+def create_ratings_table():
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ratings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER,
+            agent_id INTEGER,
+            user_id INTEGER,
+            rating INTEGER,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 def add_attachment(ticket_id, file_id):
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
