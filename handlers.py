@@ -140,6 +140,9 @@ def fileid(update: Update, context: CallbackContext) -> None:
 
     context.bot.send_photo(chat_id=chat_id, photo=attachment)
 
+def block_list(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text(f'undefined error')
+
 def stats(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
 
