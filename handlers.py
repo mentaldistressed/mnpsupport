@@ -140,6 +140,27 @@ def fileid(update: Update, context: CallbackContext) -> None:
 
     context.bot.send_photo(chat_id=chat_id, photo=attachment)
 
+def unblock(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    if chat_id != agents_chat_id:
+        update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
+        return
+
+    args = context.args
+    if not args:
+        update.message.reply_text("Использование: /unblock [ID пользователя]")
+        return
+
+    user_id = int(args[0])
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM blocks WHERE user_id = ?", (user_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    update.message.reply_text(f"✅ Пользователь {user_id} разблокирован")
+
 def block_list(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if chat_id != agents_chat_id:
