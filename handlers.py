@@ -347,6 +347,7 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
             add_attachment(open_ticket[0], photo_file)
             add_message_to_ticket(ticket_id, 'user', '*Вложение*', None, None)
             notification_text = (f'📷 Добавлена фотография к обращению №{ticket_id} от пользователя @{update.message.from_user.username} (Telegram ID: {update.message.from_user.id}) (File ID: <code>{photo_file}</code>)')
+            update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
         else:
             ticket_id = create_ticket(user_id, '1', '*Вложение*', update.message.from_user.username)
             add_attachment(ticket_id, photo_file)
