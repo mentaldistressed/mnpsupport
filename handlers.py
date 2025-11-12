@@ -863,6 +863,8 @@ def button_callback(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
 
+    response = None
+
     if query.data == 'all_tickets':
         tickets = get_all_tickets()
         if tickets:
@@ -899,4 +901,7 @@ def button_callback(update: Update, context: CallbackContext) -> None:
         except TelegramError as e:
             response = '🛠 Произошёл внутренний сбой, пожалуйста, совершите попытку позже'
             print(e)
-    query.edit_message_text(response, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    else:
+        print('Неизвестная кнопка')
+    if response is not None:
+        query.edit_message_text(response, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
