@@ -281,9 +281,9 @@ def block(update: Update, context: CallbackContext) -> None:
 def rating_stats(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
 
-    # if chat_id != agents_chat_id:
-    #     update.message.reply_text("❌ У вас нет прав для выполнения этой команды.")
-    #     return
+    if chat_id != agents_chat_id:
+        update.message.reply_text("❌ У вас нет прав для выполнения этой команды.")
+        return
 
     try:
         conn = sqlite3.connect(DATABASE_FILE)
