@@ -1,6 +1,6 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext
 from config import TOKEN, agents_chat_id, DATABASE_FILE, backup_chat_id
-from handlers import attach, start, handle_message, answer_ticket, change_ticket_status, view_tickets, button_callback, history, handle_photo, ansid, handle_video, reboot, block, stats, edit, hhelp, check_tickets, quick_answer_ticket, qinfo, check_block, delete_message, block_list, unblock
+from handlers import attach, start, handle_message, answer_ticket, change_ticket_status, view_tickets, button_callback, history, handle_photo, ansid, handle_video, reboot, block, stats, edit, hhelp, check_tickets, quick_answer_ticket, qinfo, check_block, delete_message, block_list, unblock, rating_callback
 import os
 import threading
 import time
@@ -60,6 +60,7 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.video, handle_video))
     dispatcher.add_handler(MessageHandler(Filters.photo, handle_photo))
     dispatcher.add_handler(CallbackQueryHandler(button_callback))
+    dispatcher.add_handler(CallbackQueryHandler(rating_callback, pattern="^rate_"))
 
     updater.job_queue.run_once(notify_agents, when=0)
 
