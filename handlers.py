@@ -437,7 +437,7 @@ def reboot(update: Update, context: CallbackContext) -> None:
                 filtered_lines.append(line)
             elif line.startswith("* branch"):
                 filtered_lines.append(line)
-            elif "files changed" in line and ("insertions" in line or "deletions" in line):
+            elif "files changed" in line or ("insertions" in line or "deletions" in line):
                 filtered_lines.append(line)
 
         filtered_output = "\n".join(filtered_lines)
