@@ -46,13 +46,6 @@ def initialize_database():
     )
     ''')
     cursor.execute('''
-                   CREATE TABLE IF NOT EXISTS photos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    short_id TEXT UNIQUE,
-    file_id TEXT UNIQUE
-);
-''')
-    cursor.execute('''
                    CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     file_id TEXT
@@ -82,6 +75,15 @@ def get_ticket_by_id(ticket_id):
         }
     else:
         return None
+
+def get_user_id_by_ticket(ticket_id: int) -> int:
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id FROM tickets WHERE id = ?", (ticket_id,))
+    user_id = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+    return user_id
 
 def get_tickets_by_user(user_id: int):
     conn = sqlite3.connect('support.db')

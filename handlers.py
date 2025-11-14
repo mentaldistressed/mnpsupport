@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
-from db import get_last_agent_id, create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason, get_message_info, delete_message_from_history
+from db import get_last_agent_id, create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason, get_message_info, delete_message_from_history, get_user_id_by_ticket
 from utils import status_mapping, QUICK_RESPONSES
 from typing import List, Tuple
 import os
@@ -427,47 +427,15 @@ def reboot(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('🔄 Обновление кода с Git и перезапуск бота...')
 
     try:
-        # Выполняем git pull
         result = subprocess.run(['git', 'pull', 'origin', 'main'], capture_output=True, text=True)
-        output = result.stdout + '\n' + result.stderr
-        # Отправляем результат pull в чат (или ограничим 4000 символов для Telegram)
-        update.message.reply_text(f'📥 Результат git pull:\n<pre>{output[:4000]}</pre>', parse_mode='HTML')
+        output_lines = result.stdout.splitlines() + result.stderr.splitlines()
+        filtered_output = '\n'.join([line for line in output_lines if not line.startswith('From https://')])
+        update.message.reply_text(f'📥 Результат git pull:\n<pre>{filtered_output[:4000]}</pre>', parse_mode='HTML')
     except Exception as e:
         update.message.reply_text(f'❌ Ошибка при выполнении git pull: {e}')
 
-    # Перезапуск скрипта
     python = sys.executable
     os.execl(python, python, *sys.argv)
-
-# def answer_ticket(update: Update, context: CallbackContext) -> None:
-#     args = context.args
-#     if len(args) < 2:
-#         update.message.reply_text('Использование: /ans [ID обращения] [короткий ID фото] [Сообщение (необязательно)]')
-#         return
-    
-#     ticket_id = int(args[0])  # ID обращения
-#     short_id = args[1]  # Короткий ID фото
-#     message = ' '.join(args[2:]) if len(args) > 2 else ''  # Сообщение, если есть
-
-#     user_id = get_user_id_by_ticket(ticket_id)
-
-#     # Проверяем, является ли второй аргумент коротким ID фото
-#     if is_short_id(short_id):
-#         file_id = get_file_id_by_short_id(short_id)
-#         if file_id:
-#             # Если есть сообщение, отправляем его вместе с фото
-#             context.bot.send_photo(chat_id=user_id, photo=file_id, caption='👨‍💻 Агент поддержки отправил Вам фотографию и написал: ' + message)
-#         else:
-#             update.message.reply_text('Фото с таким ID не найдено.')
-#     else:
-#         # Если второй аргумент не короткий ID, отправляем его как текст
-#         context.bot.send_message(chat_id=user_id, text='👨‍💻 Агент поддержки: ' + short_id)
-
-#     # Если сообщение было отправлено, добавляем его к ответу
-#     if message:
-#         context.bot.send_message(chat_id=user_id, text='👨‍💻 Агент поддержки: ' + message)
-
-#     update.message.reply_text('Ответ отправлен пользователю.')
 
 def delete_message(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
@@ -653,27 +621,6 @@ def answer_ticket(update: Update, context: CallbackContext) -> None:
     finally:
         cursor.close()
         conn.close()
-
-def is_short_id(id_str: str) -> bool:
-    return len(id_str) == 8 and all(c in '0123456789abcdef' for c in id_str)
-
-def get_file_id_by_short_id(short_id: str) -> str:
-    conn = sqlite3.connect(DATABASE_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT file_id FROM photos WHERE short_id = ?", (short_id,))
-    result = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    return result[0] if result else None
-
-def get_user_id_by_ticket(ticket_id: int) -> int:
-    conn = sqlite3.connect(DATABASE_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT user_id FROM tickets WHERE id = ?", (ticket_id,))
-    user_id = cursor.fetchone()[0]
-    cursor.close()
-    conn.close()
-    return user_id
 
 def change_ticket_status(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
