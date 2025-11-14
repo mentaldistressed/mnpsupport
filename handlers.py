@@ -14,6 +14,7 @@ import hashlib
 import re
 import random
 from datetime import datetime
+import subprocess
 
 access_enabled = True
 
@@ -418,12 +419,25 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
         conn.close()
 
 def reboot(update: Update, context: CallbackContext) -> None:
-    if update.message.from_user.id in allowed_ids:
-        update.message.reply_text('🔄 Перезапуск поллинга...')
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
-    else:
+    user_id = update.message.from_user.id
+    if user_id not in allowed_ids:
         update.message.reply_text('❌ У Вас нет прав для выполнения этой команды')
+        return
+
+    update.message.reply_text('🔄 Обновление кода с Git и перезапуск бота...')
+
+    try:
+        # Выполняем git pull
+        result = subprocess.run(['git', 'pull', 'origin', 'main'], capture_output=True, text=True)
+        output = result.stdout + '\n' + result.stderr
+        # Отправляем результат pull в чат (или ограничим 4000 символов для Telegram)
+        update.message.reply_text(f'📥 Результат git pull:\n<pre>{output[:4000]}</pre>', parse_mode='HTML')
+    except Exception as e:
+        update.message.reply_text(f'❌ Ошибка при выполнении git pull: {e}')
+
+    # Перезапуск скрипта
+    python = sys.executable
+    os.execl(python, python, *sys.argv)
 
 # def answer_ticket(update: Update, context: CallbackContext) -> None:
 #     args = context.args
