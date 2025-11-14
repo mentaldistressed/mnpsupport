@@ -832,12 +832,14 @@ def history(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f'История для обращения с ID {ticket_id} не найдена')
         return
 
-    # Выводим сообщения
+    # Собираем все сообщения и вложения в единый список для последовательного вывода
+    items = []
+
     for message in messages:
         timestamp_gmt3 = convert_to_gmt3(message[4])
         sender_type = message[2]
         message_text = message[3]
-        user_message_id = message[6]  # ID сообщения у пользователя
+        user_message_id = message[6]
 
         if sender_type == 'user':
             sender = 'Пользователь'
@@ -848,17 +850,26 @@ def history(update: Update, context: CallbackContext) -> None:
             if user_message_id:
                 message_text += f' <b>(ID: {user_message_id})</b>'
 
-        update.message.reply_text(f'[{timestamp_gmt3}] — {sender}: {message_text}', parse_mode=ParseMode.HTML)
-        time.sleep(0.5)
+        items.append(f'[{timestamp_gmt3}] — {sender}: {message_text}')
 
-    # Выводим вложения как отдельные сообщения с file_id
-    attachment_count = 1
     for attachment in attachments:
+        timestamp_gmt3 = convert_to_gmt3(attachment[3])  # предполагаем, что timestamp хранится в attachment[3]
         file_id = attachment[2]
-        update.message.reply_text(f'[{convert_to_gmt3(attachment[3])}] — Пользователь: *Вложение* (file_id: `{file_id}`)',
-                                  parse_mode=ParseMode.MARKDOWN)
-        attachment_count += 1
-        time.sleep(0.5)
+        items.append(f'[{timestamp_gmt3}] — Пользователь: *Вложение* (File ID: `{file_id}`)')
+
+    # Делим на чанки <= 4096 символов
+    max_message_length = 4096
+    chunk = ''
+    for line in items:
+        if len(chunk) + len(line) + 1 <= max_message_length:
+            chunk += line + '\n'
+        else:
+            update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
+            time.sleep(1)
+            chunk = line + '\n'
+
+    if chunk:
+        update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
 
 # def history(update: Update, context: CallbackContext) -> None:
 #     chat_id = update.effective_chat.id
