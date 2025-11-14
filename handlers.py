@@ -871,8 +871,9 @@ def history(update: Update, context: CallbackContext) -> None:
             file_id = attachment[2]
             escaped_file_id = escape_markdown(file_id)
             time.sleep(1)
-            context.bot.send_message(chat_id=chat_id, text=f'📸 Вложение №{attachment_count}', parse_mode=ParseMode.MARKDOWN)
-            context.bot.send_photo(chat_id=chat_id, photo=attachment[2])
+            # context.bot.send_message(chat_id=chat_id, text=f'📸 Вложение №{attachment_count}', parse_mode=ParseMode.MARKDOWN)
+            # context.bot.send_photo(chat_id=chat_id, photo=attachment[2])
+            response += f'📷 Вложение №{attachment_count} (File ID: <code>{file_id}</code>)\n'
             attachment_count += 1
             
     else:
