@@ -4,3 +4,4 @@ DATABASE_FILE = 'support.db'
 allowed_ids = [7897895019, 5427059231]
 agents_chat_id = -1002322432827
 backup_chat_id = 7897895019
+# aksdkasdk
