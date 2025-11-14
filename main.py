@@ -7,7 +7,7 @@ import time
 import sys
 import logging
 
-version = '1.1.2 / Bundle: Release'
+version = '1.1.3 / Bundle: Dev'
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
