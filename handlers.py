@@ -421,7 +421,7 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
 def reboot(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     if user_id not in allowed_ids:
-        update.message.reply_text('❌ У Вас нет прав для выполнения этой команды')
+        update.message.reply_text('❌ У В11ас нет прав для выполнения этой команды')
         return
 
     update.message.reply_text('🔄 Обновление кода с Git и перезапуск бота...')
