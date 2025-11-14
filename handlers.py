@@ -812,7 +812,7 @@ def get_agent_number(agent_id):
         return 3
     else:
         return "?"
-
+    
 def history(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if chat_id != agents_chat_id:
@@ -823,118 +823,60 @@ def history(update: Update, context: CallbackContext) -> None:
     if len(args) < 1:
         update.message.reply_text('Использование: /history [ID обращения]')
         return
-
+    
     ticket_id = int(args[0])
     messages = get_ticket_history(ticket_id)
     attachments = get_ticket_attachments(ticket_id)
 
-    if not messages and not attachments:
-        update.message.reply_text(f'История для обращения с ID {ticket_id} не найдена')
-        return
+    if messages:
+        response = ''
+        attachment_count = 1
 
-    # Собираем все сообщения и вложения в единый список для последовательного вывода
-    items = []
+        for message in messages:
+            message_id = message[0]  # ID сообщения в истории
+            user_message_id = message[6]  # ID сообщения у пользователя
+            timestamp_gmt3 = convert_to_gmt3(message[4])
+            sender_type = message[2]
+            message_text = message[3]
 
-    for message in messages:
-        timestamp_gmt3 = convert_to_gmt3(message[4])
-        sender_type = message[2]
-        message_text = message[3]
-        user_message_id = message[6]
+            if sender_type == 'user':
+                sender = 'Пользователь'
+            else:
+                agent_id = message[5]
+                agent_number = get_agent_number(agent_id)
+                sender = f'👨‍💻 Агент поддержки #{agent_number}'
 
-        if sender_type == 'user':
-            sender = 'Пользователь'
-        else:
-            agent_id = message[5]
-            agent_number = get_agent_number(agent_id)
-            sender = f'👨‍💻 Агент поддержки #{agent_number}'
-            if user_message_id:
-                message_text += f' <b>(ID: {user_message_id})</b>'
+                if user_message_id:
+                    message_text += f' <b>(ID: {user_message_id})</b>'
 
-        items.append(f'[{timestamp_gmt3}] — {sender}: {message_text}')
+            response += f'[{timestamp_gmt3}] — {sender}: {message_text}\n'
 
-    for attachment in attachments:
-        timestamp_gmt3 = convert_to_gmt3(attachment[3])  # предполагаем, что timestamp хранится в attachment[3]
-        file_id = attachment[2]
-        items.append(f'[{timestamp_gmt3}] — Пользователь: *Вложение* (File ID: `{file_id}`)')
+        max_message_length = 4096
+        response_lines = response.split('\n')
+        chunk = ''
 
-    # Делим на чанки <= 4096 символов
-    max_message_length = 4096
-    chunk = ''
-    for line in items:
-        if len(chunk) + len(line) + 1 <= max_message_length:
-            chunk += line + '\n'
-        else:
+        for line in response_lines:
+            if len(chunk) + len(line) + 1 <= max_message_length:
+                chunk += line + '\n'
+            else:
+                update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
+                time.sleep(1)
+                chunk = line + '\n'
+        
+        if chunk:
             update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
             time.sleep(1)
-            chunk = line + '\n'
 
-    if chunk:
-        update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
-
-# def history(update: Update, context: CallbackContext) -> None:
-#     chat_id = update.effective_chat.id
-#     if chat_id != agents_chat_id:
-#         update.message.reply_text('❌ У вас нет прав для выполнения этой команды')
-#         return
-
-#     args = context.args
-#     if len(args) < 1:
-#         update.message.reply_text('Использование: /history [ID обращения]')
-#         return
-    
-#     ticket_id = int(args[0])
-#     messages = get_ticket_history(ticket_id)
-#     attachments = get_ticket_attachments(ticket_id)
-
-#     if messages:
-#         response = ''
-#         attachment_count = 1
-
-#         for message in messages:
-#             message_id = message[0]  # ID сообщения в истории
-#             user_message_id = message[6]  # ID сообщения у пользователя
-#             timestamp_gmt3 = convert_to_gmt3(message[4])
-#             sender_type = message[2]
-#             message_text = message[3]
-
-#             if sender_type == 'user':
-#                 sender = 'Пользователь'
-#             else:
-#                 agent_id = message[5]
-#                 agent_number = get_agent_number(agent_id)
-#                 sender = f'👨‍💻 Агент поддержки #{agent_number}'
-
-#                 if user_message_id:
-#                     message_text += f' <b>(ID: {user_message_id})</b>'
-
-#             response += f'[{timestamp_gmt3}] — {sender}: {message_text}\n'
-
-#         max_message_length = 4096
-#         response_lines = response.split('\n')
-#         chunk = ''
-
-#         for line in response_lines:
-#             if len(chunk) + len(line) + 1 <= max_message_length:
-#                 chunk += line + '\n'
-#             else:
-#                 update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
-#                 time.sleep(1)
-#                 chunk = line + '\n'
-        
-#         if chunk:
-#             update.message.reply_text(chunk, parse_mode=ParseMode.HTML)
-#             time.sleep(1)
-
-#         for attachment in attachments:
-#             file_id = attachment[2]
-#             escaped_file_id = escape_markdown(file_id)
-#             time.sleep(1)
-#             context.bot.send_message(chat_id=chat_id, text=f'📸 Вложение №{attachment_count}', parse_mode=ParseMode.MARKDOWN)
-#             context.bot.send_photo(chat_id=chat_id, photo=attachment[2])
-#             attachment_count += 1
+        for attachment in attachments:
+            file_id = attachment[2]
+            escaped_file_id = escape_markdown(file_id)
+            time.sleep(1)
+            context.bot.send_message(chat_id=chat_id, text=f'📸 Вложение №{attachment_count}', parse_mode=ParseMode.MARKDOWN)
+            context.bot.send_photo(chat_id=chat_id, photo=attachment[2])
+            attachment_count += 1
             
-#     else:
-#         update.message.reply_text(f'История для обращения с ID {ticket_id} не найдена')
+    else:
+        update.message.reply_text(f'История для обращения с ID {ticket_id} не найдена')
 
 def button_callback(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
