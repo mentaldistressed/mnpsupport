@@ -429,8 +429,20 @@ def reboot(update: Update, context: CallbackContext) -> None:
     try:
         result = subprocess.run(['git', 'pull', 'origin', 'main'], capture_output=True, text=True)
         output_lines = result.stdout.splitlines() + result.stderr.splitlines()
-        filtered_output = '\n'.join([line for line in output_lines if not line.startswith('From https://')])
-        update.message.reply_text(f'📥 Результат git pull:\n<pre>{filtered_output[:4000]}</pre>', parse_mode='HTML')
+
+        filtered_lines = []
+        for line in output_lines:
+            line = line.strip()
+            if line == "Already up to date.":
+                filtered_lines.append(line)
+            elif line.startswith("* branch"):
+                filtered_lines.append(line)
+            elif "files changed" in line and ("insertions" in line or "deletions" in line):
+                filtered_lines.append(line)
+
+        filtered_output = "\n".join(filtered_lines)
+
+        update.message.reply_text(f'📥 Результат git pull:\n<pre>{filtered_output[:4000]}</pre>', parse_mode=ParseMode.HTML)
     except Exception as e:
         update.message.reply_text(f'❌ Ошибка при выполнении git pull: {e}')
 
