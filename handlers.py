@@ -421,7 +421,7 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
 def reboot(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     if user_id not in allowed_ids:
-        update.message.reply_text('❌ У В11ас нет прав для выполнения этой команды')
+        update.message.reply_text('❌ У Вас нет прав для выполнения этой команды')
         return
 
     update.message.reply_text('🔄 Обновление кода с Git и перезапуск бота...')
@@ -437,7 +437,7 @@ def reboot(update: Update, context: CallbackContext) -> None:
                 filtered_lines.append(line)
             elif line.startswith("* branch"):
                 filtered_lines.append(line)
-            elif "files changed" in line or ("insertions" in line or "deletions" in line):
+            elif "changed" in line or ("insertions" in line or "deletions" in line):
                 filtered_lines.append(line)
 
         filtered_output = "\n".join(filtered_lines)
