@@ -372,7 +372,8 @@ def handle_message(update: Update, context: CallbackContext) -> None:
             context.bot.send_message(
                 chat_id=agents_chat_id,
                 text=agent_notice,
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True
             )
 
             return
