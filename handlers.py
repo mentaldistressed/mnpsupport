@@ -4,7 +4,7 @@ from telegram.error import TelegramError
 import sqlite3
 from config import DATABASE_FILE, CHANNEL_ID, allowed_ids, agents_chat_id
 from db import get_last_agent_id, create_ticket, get_open_ticket, add_message_to_ticket, update_ticket_status, get_all_tickets, get_ticket_history, add_attachment, get_ticket_attachments, block_user, is_user_blocked, get_statistics, edit_ticket_message, get_tickets_by_user, get_ticket_by_id, get_block_reason, get_message_info, delete_message_from_history, get_user_id_by_ticket
-from utils import status_mapping, QUICK_RESPONSES
+from utils import status_mapping, QUICK_RESPONSES, AUTOANS
 from typing import List, Tuple
 import os
 import time
@@ -341,11 +341,41 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.message.from_user.id
     message_text = update.message.text
+
     if chat_id == agents_chat_id:
         return
+
     if is_user_blocked(user_id):
-        update.message.reply_text(f'🚫 Вам ограничен доступ к написанию обращений в техническую поддержку')
+        update.message.reply_text('🚫 Вам ограничен доступ к написанию обращений в техническую поддержку')
         return
+
+    lowered = message_text.lower()
+
+    for keyword, auto_text in AUTOANS.items():
+        if keyword.lower() in lowered:
+
+            keyboard = [[InlineKeyboardButton("Вызвать агента поддержки", callback_data="call_agent")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            update.message.reply_text(auto_text, reply_markup=reply_markup, parse_mode="HTML")
+
+            agent_notice = (
+                f"🤖 <b>Сработал автоответ</b>\n\n"
+                f"👤 Пользователь: @{update.message.from_user.username} (ID: <code>{user_id}</code>)\n"
+                f"💬 Сообщение: <i>{message_text}</i>\n\n"
+                f"🔑 Ключевое слово: <b>{keyword}</b>\n"
+                f"📤 Ответ бота: <i>{auto_text}</i>"
+            )
+
+            context.bot.send_message(
+                chat_id=agents_chat_id,
+                text=agent_notice,
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True
+            )
+
+            return
+
     try:
         if access_enabled or update.message.from_user.id in allowed_ids:
             chat_member = context.bot.get_chat_member(CHANNEL_ID, update.message.from_user.id)
@@ -353,25 +383,33 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                 if update.message.video:
                     update.message.reply_text("❌ К сожалению, отправка видео недоступна. Пожалуйста, загрузите его на YouTube и предоставьте ссылку для просмотра")
                     return
+
                 conn = sqlite3.connect(DATABASE_FILE)
                 cursor = conn.cursor()
                 ticket = get_open_ticket(user_id)
+
                 if ticket:
                     ticket_id = ticket[0]
-                    ticketusername = update.message.from_user.username
                     add_message_to_ticket(ticket_id, 'user', message_text, None, None)
-                    notification_text = (f'🔔 Добавлено сообщение к обращению №{ticket_id} от пользователя @{update.message.from_user.username} '
-                                        f'(Telegram ID: {update.message.from_user.id}): {message_text}')
+                    notification_text = (
+                        f'🔔 Добавлено сообщение к обращению №{ticket_id} от пользователя @{update.message.from_user.username} '
+                        f'(Telegram ID: {update.message.from_user.id}): {message_text}'
+                    )
                     update.message.reply_text('✉️ Ваше сообщение отправлено агентам поддержки, ожидайте ответа')
+
                 else:
                     ticket_id = create_ticket(user_id, '1', message_text, update.message.from_user.username)
-                    notification_text = (f'🔔 Создано обращение №{ticket_id} от пользователя @{update.message.from_user.username} '
-                                        f'(Telegram ID: {update.message.from_user.id}): {message_text}')
+                    notification_text = (
+                        f'🔔 Создано обращение №{ticket_id} от пользователя @{update.message.from_user.username} '
+                        f'(Telegram ID: {update.message.from_user.id}): {message_text}'
+                    )
                     update.message.reply_text('✉️ Агенты поддержки получили Ваше обращение, пожалуйста, ожидайте ответа')
+
             else:
                 keyboard = [
-                    [InlineKeyboardButton("👉 Подписаться на канал", url=f"https://t.me/gta_mn")],
-                    [InlineKeyboardButton("🚀 Запустить бота", callback_data='start')],]
+                    [InlineKeyboardButton("👉 Подписаться на канал", url="https://t.me/gta_mn")],
+                    [InlineKeyboardButton("🚀 Запустить бота", callback_data='start')],
+                ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text('⚠️ Для начала взаимодействия с помощником Вам необходимо подписаться на наш новостной канал', reply_markup=reply_markup)
 
@@ -860,18 +898,15 @@ def button_callback(update: Update, context: CallbackContext) -> None:
 
     if query.data.startswith("rate_"):
         try:
-            # Формат: rate_<ticket_id>_<rating>
             _, ticket_id_str, rating_str = query.data.split('_')
             ticket_id = int(ticket_id_str)
             rating = int(rating_str)
             user_id = query.from_user.id
 
-            # Получаем последнего агента по тикету
             agent_id = get_agent_number(get_last_agent_id(ticket_id))
             if not agent_id:
                 response = "❌ Не удалось определить агента для оценки"
             else:
-                # Сохраняем оценку
                 conn = sqlite3.connect(DATABASE_FILE)
                 cursor = conn.cursor()
                 cursor.execute(
@@ -884,7 +919,6 @@ def button_callback(update: Update, context: CallbackContext) -> None:
 
                 response = f"Спасибо за оценку! Вы поставили {rating}⭐️"
 
-                # Уведомляем агентов
                 context.bot.send_message(
                     chat_id=agents_chat_id,
                     text=f"🔔 Пользователь <b>{user_id}</b> оценил работу агента #<b>{agent_id}</b> по тикету №{ticket_id} на {rating}⭐️",
@@ -893,6 +927,9 @@ def button_callback(update: Update, context: CallbackContext) -> None:
 
         except Exception as e:
             response = f"❌ Ошибка при сохранении оценки: {e}"
+    if query.data == "call_agent":
+        query.edit_message_text("🛎 Пожалуйста, опишите свою проблему, и я вызову агента поддержки.")
+        return
     if query.data == 'all_tickets':
         tickets = get_all_tickets()
         if tickets:
