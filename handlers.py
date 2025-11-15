@@ -352,7 +352,9 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     lowered = message_text.lower()
 
     for keyword, auto_text in AUTOANS.items():
-        if keyword.lower() in lowered:
+        keyword_words = keyword.lower().split()
+
+        if all(word in lowered for word in keyword_words):
 
             keyboard = [[InlineKeyboardButton("Вызвать агента поддержки", callback_data="call_agent")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -363,15 +365,14 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                 f"🤖 <b>Сработал автоответ</b>\n\n"
                 f"👤 Пользователь: @{update.message.from_user.username} (ID: <code>{user_id}</code>)\n"
                 f"💬 Сообщение: <i>{message_text}</i>\n\n"
-                f"🔑 Ключевое слово: <b>{keyword}</b>\n"
+                f"🔑 Ключ: <b>{keyword}</b>\n"
                 f"📤 Ответ бота: <i>{auto_text}</i>"
             )
 
             context.bot.send_message(
                 chat_id=agents_chat_id,
                 text=agent_notice,
-                parse_mode=ParseMode.HTML,
-                disable_web_page_preview=True
+                parse_mode=ParseMode.HTML
             )
 
             return
