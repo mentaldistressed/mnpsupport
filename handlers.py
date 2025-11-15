@@ -359,7 +359,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
             keyboard = [[InlineKeyboardButton("Вызвать агента поддержки", callback_data="call_agent")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            update.message.reply_text(auto_text, reply_markup=reply_markup, parse_mode="HTML")
+            update.message.reply_text(auto_text, reply_markup=reply_markup, parse_mode="HTML", disable_web_page_preview=True)
 
             agent_notice = (
                 f"🤖 <b>Сработал автоответ</b>\n\n"
